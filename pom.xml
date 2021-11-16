@@ -21,6 +21,10 @@
     <!--TODO: add jpamodelgen-->
     <!--TODO: add actuator-->
     <!--TODO: add cookie with credentials-->
+    <!--TODO: add profiles-->
+    <!--TODO: add https-->
+    <!--TODO: add WS to messenger-->
+    <!--TODO: add Spring integration???-->
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -25,6 +25,7 @@
     <!--TODO: add https-->
     <!--TODO: add WS to messenger-->
     <!--TODO: add Spring integration???-->
+    <!--TODO: add Spring webflux???-->
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>

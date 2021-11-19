@@ -16,7 +16,7 @@
     <properties>
         <java.version>17</java.version>
     </properties>
-    <!--TODO: add security-->
+    <!--TODO: add security(roles?)-->
     <!--TODO: add logging-->
     <!--TODO: add jpamodelgen-->
     <!--TODO: add actuator-->
@@ -26,6 +26,7 @@
     <!--TODO: add WS to messenger-->
     <!--TODO: add Spring integration???-->
     <!--TODO: add Spring webflux???-->
+    <!--TODO: add Eureka for market???-->
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -1,5 +1,7 @@
 package com.petproject.boardgamefun.model;
 
+import org.hibernate.annotations.Type;
+
 import javax.persistence.*;
 import java.time.OffsetTime;
 
@@ -13,7 +15,6 @@ public class Game {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Lob
     @Column(name = "title", nullable = false)
     private String title;
 
@@ -21,27 +22,72 @@ public class Game {
     private OffsetTime yearOfRelease;
 
     @Lob
-    @Column(name = "annotanion", nullable = false)
-    private String annotanion;
+    @Type(type = "org.hibernate.type.TextType")
+    @Column(name = "annotation", nullable = false)
+    private String annotation;
 
     @Lob
+    @Type(type = "org.hibernate.type.TextType")
     @Column(name = "description", nullable = false)
     private String description;
 
-    @Lob
-    @Column(name = "players_number", nullable = false)
-    private String playersNumber;
-
-    @Lob
-    @Column(name = "time_to_play")
-    private String timeToPlay;
-
-    @Lob
-    @Column(name = "age")
-    private String age;
-
     @Column(name = "picture")
     private byte[] picture;
+
+    @Column(name = "player_age")
+    private String playerAge;
+
+    @Column(name = "players_min", nullable = false)
+    private Integer playersMin;
+
+    @Column(name = "players_max", nullable = false)
+    private Integer playersMax;
+
+    @Column(name = "time_to_play_min", nullable = false)
+    private Integer timeToPlayMin;
+
+    @Column(name = "time_to_play_max", nullable = false)
+    private Integer timeToPlayMax;
+
+    public Integer getTimeToPlayMax() {
+        return timeToPlayMax;
+    }
+
+    public void setTimeToPlayMax(Integer timeToPlayMax) {
+        this.timeToPlayMax = timeToPlayMax;
+    }
+
+    public Integer getTimeToPlayMin() {
+        return timeToPlayMin;
+    }
+
+    public void setTimeToPlayMin(Integer timeToPlayMin) {
+        this.timeToPlayMin = timeToPlayMin;
+    }
+
+    public Integer getPlayersMax() {
+        return playersMax;
+    }
+
+    public void setPlayersMax(Integer playersMax) {
+        this.playersMax = playersMax;
+    }
+
+    public Integer getPlayersMin() {
+        return playersMin;
+    }
+
+    public void setPlayersMin(Integer playersMin) {
+        this.playersMin = playersMin;
+    }
+
+    public String getPlayerAge() {
+        return playerAge;
+    }
+
+    public void setPlayerAge(String playerAge) {
+        this.playerAge = playerAge;
+    }
 
     public byte[] getPicture() {
         return picture;
@@ -49,30 +95,6 @@ public class Game {
 
     public void setPicture(byte[] picture) {
         this.picture = picture;
-    }
-
-    public String getAge() {
-        return age;
-    }
-
-    public void setAge(String age) {
-        this.age = age;
-    }
-
-    public String getTimeToPlay() {
-        return timeToPlay;
-    }
-
-    public void setTimeToPlay(String timeToPlay) {
-        this.timeToPlay = timeToPlay;
-    }
-
-    public String getPlayersNumber() {
-        return playersNumber;
-    }
-
-    public void setPlayersNumber(String playersNumber) {
-        this.playersNumber = playersNumber;
     }
 
     public String getDescription() {
@@ -83,12 +105,12 @@ public class Game {
         this.description = description;
     }
 
-    public String getAnnotanion() {
-        return annotanion;
+    public String getAnnotation() {
+        return annotation;
     }
 
-    public void setAnnotanion(String annotanion) {
-        this.annotanion = annotanion;
+    public void setAnnotation(String annotation) {
+        this.annotation = annotation;
     }
 
     public OffsetTime getYearOfRelease() {

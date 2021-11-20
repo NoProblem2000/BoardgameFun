@@ -23,10 +23,9 @@ public class GameController {
     @GetMapping()
     ResponseEntity<List<Game>> getGames(){
         var games = gameRepository.findAll();
-        if (games.size() != 0) {
-            return new ResponseEntity<>(games, HttpStatus.OK);
-        }
-        return new ResponseEntity<>(games, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(games, HttpStatus.OK);
+
+
 
     }
 }

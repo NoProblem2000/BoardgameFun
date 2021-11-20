@@ -27,6 +27,7 @@
     <!--TODO: add Spring integration???-->
     <!--TODO: add Spring webflux???-->
     <!--TODO: add Eureka for market???-->
+    <!--TODO: add spring-boot-admin???-->
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>

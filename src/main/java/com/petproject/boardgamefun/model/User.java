@@ -1,9 +1,12 @@
 package com.petproject.boardgamefun.model;
 
 import javax.persistence.*;
-import java.time.OffsetTime;
+import java.time.OffsetDateTime;
 
-@Table(name = "user")
+@Table(name = "site_user", indexes = {
+        @Index(name = "mail_un", columnList = "mail", unique = true),
+        @Index(name = "user_un", columnList = "name", unique = true)
+})
 @Entity
 public class User {
     @Id
@@ -30,14 +33,22 @@ public class User {
     @Column(name = "town")
     private String town;
 
-    @Column(name = "registration_date", nullable = false)
-    private OffsetTime registrationDate;
-
     @Column(name = "rating")
     private Double rating;
 
-    @Column(name = "avatar")
+    @Column(name = "avatar", nullable = false)
     private byte[] avatar;
+
+    @Column(name = "registration_date", nullable = false)
+    private OffsetDateTime registrationDate;
+
+    public OffsetDateTime getRegistrationDate() {
+        return registrationDate;
+    }
+
+    public void setRegistrationDate(OffsetDateTime registrationDate) {
+        this.registrationDate = registrationDate;
+    }
 
     public byte[] getAvatar() {
         return avatar;
@@ -53,14 +64,6 @@ public class User {
 
     public void setRating(Double rating) {
         this.rating = rating;
-    }
-
-    public OffsetTime getRegistrationDate() {
-        return registrationDate;
-    }
-
-    public void setRegistrationDate(OffsetTime registrationDate) {
-        this.registrationDate = registrationDate;
     }
 
     public String getTown() {

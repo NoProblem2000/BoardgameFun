@@ -1,6 +1,10 @@
 package com.petproject.boardgamefun.controller;
 
+import com.petproject.boardgamefun.model.Game;
 import com.petproject.boardgamefun.model.User;
+import com.petproject.boardgamefun.model.UserOwnGame;
+import com.petproject.boardgamefun.repository.GameRepository;
+import com.petproject.boardgamefun.repository.UserOwnGameRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
 import com.petproject.boardgamefun.security.jwt.JwtUtils;
 import com.petproject.boardgamefun.security.model.JwtResponse;
@@ -15,33 +19,39 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.transaction.Transactional;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/users")
 public class UserController {
+    final GameRepository gameRepository;
     final UserRepository userRepository;
+    final UserOwnGameRepository userOwnGameRepository;
     final PasswordEncoder passwordEncoder;
     final JwtUtils jwtUtils;
     final AuthenticationManager authenticationManager;
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils, AuthenticationManager authenticationManager) {
+    public UserController(GameRepository gameRepository, UserRepository userRepository, UserOwnGameRepository userOwnGameRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils, AuthenticationManager authenticationManager) {
+        this.gameRepository = gameRepository;
         this.userRepository = userRepository;
+        this.userOwnGameRepository = userOwnGameRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.authenticationManager = authenticationManager;
     }
 
     @GetMapping()
-    public ResponseEntity<List<User>> getUsers(){
+    public ResponseEntity<List<User>> getUsers() {
         var users = userRepository.findAll();
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
     @PostMapping("sign-in")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest){
-        if (!userRepository.existsUserByName(loginRequest.getName())){
+    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+        if (!userRepository.existsByName(loginRequest.getName())) {
             return new ResponseEntity<>("Пользователя с таким никнеймом не существует", HttpStatus.BAD_REQUEST);
         }
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getName(), loginRequest.getPassword()));
@@ -54,18 +64,61 @@ public class UserController {
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<?> registerUser(@RequestBody User user){
+    public ResponseEntity<?> registerUser(@RequestBody User user) {
 
-        if (userRepository.existsUserByName(user.getName())){
+        if (userRepository.existsByName(user.getName())) {
             return new ResponseEntity<>("Пользователь с таким никнеймом уже существует", HttpStatus.BAD_REQUEST);
         }
 
-        if (userRepository.existsUserByMail(user.getMail())){
+        if (userRepository.existsByMail(user.getMail())) {
             return new ResponseEntity<>("Пользователь с такой почтой уже существует", HttpStatus.BAD_REQUEST);
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRegistrationDate(OffsetDateTime.now());
         userRepository.save(user);
         return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    @GetMapping("{id}")
+    public ResponseEntity<User> getUser(@PathVariable Integer id) {
+        var user = userRepository.findUserById(id);
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/games")
+    public ResponseEntity<List<Game>> getUserGames(@PathVariable Integer id) {
+        var games = gameRepository.findUserGames(id);
+        return new ResponseEntity<>(games, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PostMapping("{userId}/add-game/{gameId}")
+    public ResponseEntity<?> addGameToUser(@PathVariable Integer userId, @PathVariable Integer gameId){
+
+        var user = userRepository.findUserById(userId);
+        var game = gameRepository.findGameById(gameId);
+
+        var userOwnGame = new UserOwnGame();
+        userOwnGame.setGame(game);
+        userOwnGame.setUser(user);
+
+        userOwnGameRepository.save(userOwnGame);
+
+        return new ResponseEntity<>(game.getTitle() + " добавлена в вашу коллекцию", HttpStatus.OK);
+    }
+
+    @Transactional
+    @DeleteMapping("{userId}/delete-game/{gameId}")
+    public ResponseEntity<?> deleteGameFromUserCollection(@PathVariable Integer userId, @PathVariable Integer gameId){
+
+        var user = userRepository.findUserById(userId);
+        var game = gameRepository.findGameById(gameId);
+
+        var userOwnGame = userOwnGameRepository.findByGameAndUser(game, user);
+
+        userOwnGameRepository.delete(userOwnGame);
+
+        return  new ResponseEntity<>(game.getTitle() + " удалена из вашей коллекции", HttpStatus.OK);
     }
 }

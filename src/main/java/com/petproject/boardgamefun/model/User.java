@@ -1,5 +1,7 @@
 package com.petproject.boardgamefun.model;
 
+import org.hibernate.annotations.Type;
+
 import javax.persistence.*;
 import java.time.OffsetDateTime;
 
@@ -14,29 +16,26 @@ public class User {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "name", nullable = false, length = 1)
+    @Column(name = "name", nullable = false)
     private String name;
 
     @Lob
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Lob
     @Column(name = "role", nullable = false)
     private String role;
 
-    @Lob
     @Column(name = "mail", nullable = false)
     private String mail;
 
-    @Lob
     @Column(name = "town")
     private String town;
 
     @Column(name = "rating")
     private Double rating;
 
-    @Column(name = "avatar", nullable = false)
+    @Column(name = "avatar")
     private byte[] avatar;
 
     @Column(name = "registration_date", nullable = false)

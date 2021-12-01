@@ -1,14 +1,8 @@
 package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.GameRatingDTO;
-import com.petproject.boardgamefun.model.Game;
-import com.petproject.boardgamefun.model.RatingGameByUser;
-import com.petproject.boardgamefun.model.User;
-import com.petproject.boardgamefun.model.UserOwnGame;
-import com.petproject.boardgamefun.repository.GameRepository;
-import com.petproject.boardgamefun.repository.RatingGameByUserRepository;
-import com.petproject.boardgamefun.repository.UserOwnGameRepository;
-import com.petproject.boardgamefun.repository.UserRepository;
+import com.petproject.boardgamefun.model.*;
+import com.petproject.boardgamefun.repository.*;
 import com.petproject.boardgamefun.security.jwt.JwtUtils;
 import com.petproject.boardgamefun.security.model.JwtResponse;
 import com.petproject.boardgamefun.security.model.LoginRequest;
@@ -35,16 +29,25 @@ public class UserController {
     final UserRepository userRepository;
     final UserOwnGameRepository userOwnGameRepository;
     final RatingGameByUserRepository ratingGameByUserRepository;
+    final UserWishRepository userWishRepository;
 
     final PasswordEncoder passwordEncoder;
     final JwtUtils jwtUtils;
     final AuthenticationManager authenticationManager;
 
-    public UserController(GameRepository gameRepository, UserRepository userRepository, UserOwnGameRepository userOwnGameRepository, RatingGameByUserRepository ratingGameByUserRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils, AuthenticationManager authenticationManager) {
+    public UserController(GameRepository gameRepository,
+                          UserRepository userRepository,
+                          UserOwnGameRepository userOwnGameRepository,
+                          RatingGameByUserRepository ratingGameByUserRepository,
+                          UserWishRepository userWishRepository,
+                          PasswordEncoder passwordEncoder,
+                          JwtUtils jwtUtils,
+                          AuthenticationManager authenticationManager) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.userOwnGameRepository = userOwnGameRepository;
         this.ratingGameByUserRepository = ratingGameByUserRepository;
+        this.userWishRepository = userWishRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.authenticationManager = authenticationManager;
@@ -94,7 +97,8 @@ public class UserController {
     }
 
     @GetMapping("/{id}/games")
-    public ResponseEntity<List<Game>> getUserGames(@PathVariable Integer id) {
+    public ResponseEntity<List<Game>> getUserCollectionByType(@PathVariable Integer id) {
+
         var games = gameRepository.findUserGames(id);
         return new ResponseEntity<>(games, HttpStatus.OK);
     }
@@ -174,5 +178,46 @@ public class UserController {
 
         return new ResponseEntity<>(rating, HttpStatus.OK);
     }
+
+    @GetMapping("/{id}/wishlist")
+    public ResponseEntity<List<Game>> getUserWishlist(@PathVariable Integer id) {
+        var games = gameRepository.findUserWishlist(id);
+        return new ResponseEntity<>(games, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PostMapping("{userId}/add-game-to-wishlist/{gameId}")
+    public ResponseEntity<?> addGameToUserWishlist(@PathVariable Integer userId, @PathVariable Integer gameId) {
+
+        var user = userRepository.findUserById(userId);
+        var game = gameRepository.findGameById(gameId);
+
+        var userWish = new UserWish();
+        userWish.setGame(game);
+        userWish.setUser(user);
+
+        userWishRepository.save(userWish);
+
+        return new ResponseEntity<>(game.getTitle() + " добавлена в ваши желания", HttpStatus.OK);
+    }
+
+    @Transactional
+    @DeleteMapping("{userId}/delete-game-from-wishlist/{gameId}")
+    public ResponseEntity<?> deleteGameFromUserWishlist(@PathVariable Integer userId, @PathVariable Integer gameId) {
+
+        var user = userRepository.findUserById(userId);
+        var game = gameRepository.findGameById(gameId);
+
+        var userWish = userWishRepository.findByGameAndUser(game, user);
+
+        userWishRepository.delete(userWish);
+
+        return new ResponseEntity<>(game.getTitle() + " удалена из вашего списка желаемого", HttpStatus.OK);
+    }
+
+    //todo: sell games
+    //todo: diary
+    //todo: edit user
+    //todo: add game
 
 }

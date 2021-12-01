@@ -23,4 +23,10 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
             "where u.id = :id " +
             "order by rgbu.rating desc")
     List<GameRatingDTO> findGameRatingList(Integer id);
+
+    @Query("Select g from Game g " +
+            "join UserWish uw on g.id = uw.game.id " +
+            "join User u on u.id = uw.user.id " +
+            "where u.id = :id")
+    List<Game> findUserWishlist(Integer id);
 }

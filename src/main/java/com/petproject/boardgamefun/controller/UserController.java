@@ -1,9 +1,12 @@
 package com.petproject.boardgamefun.controller;
 
+import com.petproject.boardgamefun.dto.GameRatingDTO;
 import com.petproject.boardgamefun.model.Game;
+import com.petproject.boardgamefun.model.RatingGameByUser;
 import com.petproject.boardgamefun.model.User;
 import com.petproject.boardgamefun.model.UserOwnGame;
 import com.petproject.boardgamefun.repository.GameRepository;
+import com.petproject.boardgamefun.repository.RatingGameByUserRepository;
 import com.petproject.boardgamefun.repository.UserOwnGameRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
 import com.petproject.boardgamefun.security.jwt.JwtUtils;
@@ -27,17 +30,21 @@ import java.util.List;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/users")
 public class UserController {
+
     final GameRepository gameRepository;
     final UserRepository userRepository;
     final UserOwnGameRepository userOwnGameRepository;
+    final RatingGameByUserRepository ratingGameByUserRepository;
+
     final PasswordEncoder passwordEncoder;
     final JwtUtils jwtUtils;
     final AuthenticationManager authenticationManager;
 
-    public UserController(GameRepository gameRepository, UserRepository userRepository, UserOwnGameRepository userOwnGameRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils, AuthenticationManager authenticationManager) {
+    public UserController(GameRepository gameRepository, UserRepository userRepository, UserOwnGameRepository userOwnGameRepository, RatingGameByUserRepository ratingGameByUserRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils, AuthenticationManager authenticationManager) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.userOwnGameRepository = userOwnGameRepository;
+        this.ratingGameByUserRepository = ratingGameByUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.authenticationManager = authenticationManager;
@@ -94,7 +101,7 @@ public class UserController {
 
     @Transactional
     @PostMapping("{userId}/add-game/{gameId}")
-    public ResponseEntity<?> addGameToUser(@PathVariable Integer userId, @PathVariable Integer gameId){
+    public ResponseEntity<?> addGameToUser(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
@@ -110,7 +117,7 @@ public class UserController {
 
     @Transactional
     @DeleteMapping("{userId}/delete-game/{gameId}")
-    public ResponseEntity<?> deleteGameFromUserCollection(@PathVariable Integer userId, @PathVariable Integer gameId){
+    public ResponseEntity<?> deleteGameFromUserCollection(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
@@ -119,6 +126,53 @@ public class UserController {
 
         userOwnGameRepository.delete(userOwnGame);
 
-        return  new ResponseEntity<>(game.getTitle() + " удалена из вашей коллекции", HttpStatus.OK);
+        return new ResponseEntity<>(game.getTitle() + " удалена из вашей коллекции", HttpStatus.OK);
     }
+
+    @GetMapping("/{userId}/games-rating")
+    public ResponseEntity<List<GameRatingDTO>> getUserRatingList(@PathVariable Integer userId) {
+
+        var ratingGamesByUser = gameRepository.findGameRatingList(userId);
+
+        return new ResponseEntity<>(ratingGamesByUser, HttpStatus.OK);
+    }
+
+    @Transactional
+    @DeleteMapping("/{userId}/delete-game-rating/{gameId}")
+    public ResponseEntity<String> deleteGameRating(@PathVariable Integer userId, @PathVariable Integer gameId) {
+
+        var user = userRepository.findUserById(userId);
+        var game = gameRepository.findGameById(gameId);
+
+        var ratingGameByUser = ratingGameByUserRepository.findByGameAndUser(game, user);
+
+        ratingGameByUserRepository.delete(ratingGameByUser);
+
+        return new ResponseEntity<>("Оценка с текущей игры удалена", HttpStatus.OK);
+    }
+
+    @Transactional
+    @PostMapping("/{userId}/set-game-rating/{gameId}/{rating}")
+    public ResponseEntity<Integer> setGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
+
+        var user = userRepository.findUserById(userId);
+        var game = gameRepository.findGameById(gameId);
+
+        var ratingGameByUser = ratingGameByUserRepository.findByGameAndUser(game, user);
+
+        if (ratingGameByUser != null) {
+            ratingGameByUser.setRating(rating);
+            ratingGameByUserRepository.save(ratingGameByUser);
+        } else {
+            var gameRating = new RatingGameByUser();
+            gameRating.setGame(game);
+            gameRating.setUser(user);
+            gameRating.setRating(rating);
+
+            ratingGameByUserRepository.save(gameRating);
+        }
+
+        return new ResponseEntity<>(rating, HttpStatus.OK);
+    }
+
 }

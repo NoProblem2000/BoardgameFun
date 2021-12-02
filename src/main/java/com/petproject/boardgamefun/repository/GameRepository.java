@@ -1,6 +1,7 @@
 package com.petproject.boardgamefun.repository;
 
 import com.petproject.boardgamefun.dto.GameRatingDTO;
+import com.petproject.boardgamefun.dto.GameSellDTO;
 import com.petproject.boardgamefun.model.Game;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -29,4 +30,11 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
             "join User u on u.id = uw.user.id " +
             "where u.id = :id")
     List<Game> findUserWishlist(Integer id);
+
+    @Query("Select g as game, gs.comment as comment, gs.condition as condition, gs.price as price " +
+            "from Game g " +
+            "join GameSell gs on g.id = gs.game.id " +
+            "join User u on u.id = gs.user.id " +
+            "where u.id = :id")
+    List<GameSellDTO> getGameSellList(Integer id);
 }

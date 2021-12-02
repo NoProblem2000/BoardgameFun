@@ -1,6 +1,8 @@
 package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.GameRatingDTO;
+import com.petproject.boardgamefun.dto.GameSellDTO;
+import com.petproject.boardgamefun.dto.RequestGameSell;
 import com.petproject.boardgamefun.model.*;
 import com.petproject.boardgamefun.repository.*;
 import com.petproject.boardgamefun.security.jwt.JwtUtils;
@@ -30,6 +32,7 @@ public class UserController {
     final UserOwnGameRepository userOwnGameRepository;
     final RatingGameByUserRepository ratingGameByUserRepository;
     final UserWishRepository userWishRepository;
+    final GameSellRepository gameSellRepository;
 
     final PasswordEncoder passwordEncoder;
     final JwtUtils jwtUtils;
@@ -40,7 +43,7 @@ public class UserController {
                           UserOwnGameRepository userOwnGameRepository,
                           RatingGameByUserRepository ratingGameByUserRepository,
                           UserWishRepository userWishRepository,
-                          PasswordEncoder passwordEncoder,
+                          GameSellRepository gameSellRepository, PasswordEncoder passwordEncoder,
                           JwtUtils jwtUtils,
                           AuthenticationManager authenticationManager) {
         this.gameRepository = gameRepository;
@@ -48,6 +51,7 @@ public class UserController {
         this.userOwnGameRepository = userOwnGameRepository;
         this.ratingGameByUserRepository = ratingGameByUserRepository;
         this.userWishRepository = userWishRepository;
+        this.gameSellRepository = gameSellRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.authenticationManager = authenticationManager;
@@ -215,7 +219,72 @@ public class UserController {
         return new ResponseEntity<>(game.getTitle() + " удалена из вашего списка желаемого", HttpStatus.OK);
     }
 
-    //todo: sell games
+    @Transactional
+    @PostMapping("{userId}/add-game-to-sell/{gameId}")
+    public ResponseEntity<GameSell> addGameToSellList(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody RequestGameSell requestGameSell){
+
+        var user = userRepository.findUserById(userId);
+        var game = gameRepository.findGameById(gameId);
+
+        var gameSell = new GameSell();
+        gameSell.setGame(game);
+        gameSell.setUser(user);
+        gameSell.setCondition(requestGameSell.getCondition());
+        gameSell.setComment(requestGameSell.getComment());
+        gameSell.setPrice(requestGameSell.getPrice());
+
+        gameSellRepository.save(gameSell);
+
+        return new ResponseEntity<>(gameSell, HttpStatus.OK);
+    }
+
+    @Transactional
+    @GetMapping("{userId}/games-to-sell")
+    public ResponseEntity<List<GameSellDTO>> getGameSellList(@PathVariable Integer userId){
+
+        var gameSellList = gameRepository.getGameSellList(userId);
+
+        return new ResponseEntity<>(gameSellList,HttpStatus.OK);
+    }
+
+
+    @Transactional
+    @DeleteMapping("{userId}/remove-game-from-sell/{gameId}")
+     public ResponseEntity<String> removeGameFromSell(@PathVariable Integer userId, @PathVariable Integer gameId){
+
+        var user = userRepository.findUserById(userId);
+        var game = gameRepository.findGameById(gameId);
+
+        var gameSell = gameSellRepository.findByGameAndUser(game, user);
+        gameSellRepository.delete(gameSell);
+
+        return new ResponseEntity<>(game.getTitle() + " убрана из списка продаж", HttpStatus.OK);
+    }
+
+    @Transactional
+    @PutMapping("{userId}/update-game-to-sell/{gameId}")
+    public ResponseEntity<String> updateSellGame(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody RequestGameSell requestGameSell){
+
+        var user = userRepository.findUserById(userId);
+        var game = gameRepository.findGameById(gameId);
+
+        var gameSell = gameSellRepository.findByGameAndUser(game, user);
+
+        if (requestGameSell.getComment() != null){
+            gameSell.setComment(requestGameSell.getComment());
+        }
+        if (requestGameSell.getPrice() != null){
+            gameSell.setPrice(requestGameSell.getPrice());
+        }
+        if (requestGameSell.getCondition() != null){
+            gameSell.setCondition(requestGameSell.getCondition());
+        }
+
+        gameSellRepository.save(gameSell);
+
+        return new ResponseEntity<>(game.getTitle() + " обновлена", HttpStatus.OK);
+    }
+
     //todo: diary
     //todo: edit user
     //todo: add game

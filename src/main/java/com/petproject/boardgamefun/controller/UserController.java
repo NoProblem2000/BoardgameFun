@@ -127,16 +127,13 @@ public class UserController {
 
     @Transactional
     @DeleteMapping("{userId}/delete-game/{gameId}")
-    public ResponseEntity<?> deleteGameFromUserCollection(@PathVariable Integer userId, @PathVariable Integer gameId) {
+    public ResponseEntity<Integer> deleteGameFromUserCollection(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
-        var user = userRepository.findUserById(userId);
-        var game = gameRepository.findGameById(gameId);
-
-        var userOwnGame = userOwnGameRepository.findByGameAndUser(game, user);
+        var userOwnGame = userOwnGameRepository.findUserOwnGame_ByGameIdAndUserId(gameId, userId);
 
         userOwnGameRepository.delete(userOwnGame);
 
-        return new ResponseEntity<>(game.getTitle() + " удалена из вашей коллекции", HttpStatus.OK);
+        return new ResponseEntity<>(gameId, HttpStatus.OK);
     }
 
     @GetMapping("/{userId}/games-rating")
@@ -151,10 +148,7 @@ public class UserController {
     @DeleteMapping("/{userId}/delete-game-rating/{gameId}")
     public ResponseEntity<String> deleteGameRating(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
-        var user = userRepository.findUserById(userId);
-        var game = gameRepository.findGameById(gameId);
-
-        var ratingGameByUser = ratingGameByUserRepository.findByGameAndUser(game, user);
+        var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId);
 
         ratingGameByUserRepository.delete(ratingGameByUser);
 
@@ -165,16 +159,15 @@ public class UserController {
     @PostMapping("/{userId}/set-game-rating/{gameId}/{rating}")
     public ResponseEntity<Integer> setGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
 
-        var user = userRepository.findUserById(userId);
-        var game = gameRepository.findGameById(gameId);
-
-        var ratingGameByUser = ratingGameByUserRepository.findByGameAndUser(game, user);
+        var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId);
 
         if (ratingGameByUser != null) {
             ratingGameByUser.setRating(rating);
             ratingGameByUserRepository.save(ratingGameByUser);
         } else {
             var gameRating = new RatingGameByUser();
+            var game = gameRepository.findGameById(gameId);
+            var user = userRepository.findUserById(userId);
             gameRating.setGame(game);
             gameRating.setUser(user);
             gameRating.setRating(rating);
@@ -248,15 +241,12 @@ public class UserController {
 
     @Transactional
     @DeleteMapping("{userId}/remove-game-from-sell/{gameId}")
-     public ResponseEntity<String> removeGameFromSell(@PathVariable Integer userId, @PathVariable Integer gameId){
+     public ResponseEntity<Integer> removeGameFromSell(@PathVariable Integer userId, @PathVariable Integer gameId){
 
-        var user = userRepository.findUserById(userId);
-        var game = gameRepository.findGameById(gameId);
-
-        var gameSell = gameSellRepository.findByGameAndUser(game, user);
+        var gameSell = gameSellRepository.findGameSell_ByGameIdAndUserId(gameId, userId);
         gameSellRepository.delete(gameSell);
 
-        return new ResponseEntity<>(game.getTitle() + " убрана из списка продаж", HttpStatus.OK);
+        return new ResponseEntity<>(gameId, HttpStatus.OK);
     }
 
     @Transactional

@@ -2,7 +2,6 @@ package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.GameRatingDTO;
 import com.petproject.boardgamefun.dto.GameSellDTO;
-import com.petproject.boardgamefun.dto.RequestGameSell;
 import com.petproject.boardgamefun.model.*;
 import com.petproject.boardgamefun.repository.*;
 import com.petproject.boardgamefun.security.jwt.JwtUtils;
@@ -21,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.transaction.Transactional;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -33,6 +33,7 @@ public class UserController {
     final RatingGameByUserRepository ratingGameByUserRepository;
     final UserWishRepository userWishRepository;
     final GameSellRepository gameSellRepository;
+    final DiaryRepository diaryRepository;
 
     final PasswordEncoder passwordEncoder;
     final JwtUtils jwtUtils;
@@ -43,7 +44,7 @@ public class UserController {
                           UserOwnGameRepository userOwnGameRepository,
                           RatingGameByUserRepository ratingGameByUserRepository,
                           UserWishRepository userWishRepository,
-                          GameSellRepository gameSellRepository, PasswordEncoder passwordEncoder,
+                          GameSellRepository gameSellRepository, DiaryRepository diaryRepository, PasswordEncoder passwordEncoder,
                           JwtUtils jwtUtils,
                           AuthenticationManager authenticationManager) {
         this.gameRepository = gameRepository;
@@ -52,6 +53,7 @@ public class UserController {
         this.ratingGameByUserRepository = ratingGameByUserRepository;
         this.userWishRepository = userWishRepository;
         this.gameSellRepository = gameSellRepository;
+        this.diaryRepository = diaryRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.authenticationManager = authenticationManager;
@@ -221,17 +223,13 @@ public class UserController {
 
     @Transactional
     @PostMapping("{userId}/add-game-to-sell/{gameId}")
-    public ResponseEntity<GameSell> addGameToSellList(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody RequestGameSell requestGameSell){
+    public ResponseEntity<GameSell> addGameToSellList(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody GameSell gameSell){
 
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
 
-        var gameSell = new GameSell();
         gameSell.setGame(game);
         gameSell.setUser(user);
-        gameSell.setCondition(requestGameSell.getCondition());
-        gameSell.setComment(requestGameSell.getComment());
-        gameSell.setPrice(requestGameSell.getPrice());
 
         gameSellRepository.save(gameSell);
 
@@ -262,29 +260,83 @@ public class UserController {
     }
 
     @Transactional
-    @PutMapping("{userId}/update-game-to-sell/{gameId}")
-    public ResponseEntity<String> updateSellGame(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody RequestGameSell requestGameSell){
+    @PutMapping("/update-game-to-sell")
+    public ResponseEntity<String> updateSellGame(@RequestBody GameSell gameSell){
 
-        var user = userRepository.findUserById(userId);
-        var game = gameRepository.findGameById(gameId);
-
-        var gameSell = gameSellRepository.findByGameAndUser(game, user);
-
-        if (requestGameSell.getComment() != null){
-            gameSell.setComment(requestGameSell.getComment());
+        if (gameSell.getComment() != null){
+            gameSell.setComment(gameSell.getComment());
         }
-        if (requestGameSell.getPrice() != null){
-            gameSell.setPrice(requestGameSell.getPrice());
+        if (gameSell.getPrice() != null){
+            gameSell.setPrice(gameSell.getPrice());
         }
-        if (requestGameSell.getCondition() != null){
-            gameSell.setCondition(requestGameSell.getCondition());
+        if (gameSell.getCondition() != null){
+            gameSell.setCondition(gameSell.getCondition());
         }
 
         gameSellRepository.save(gameSell);
 
-        return new ResponseEntity<>(game.getTitle() + " обновлена", HttpStatus.OK);
+        return new ResponseEntity<>(gameSell.getGame().getTitle() + " обновлена", HttpStatus.OK);
     }
 
+    @Transactional
+    @PostMapping("{userId}/add-diary")
+    public ResponseEntity<Diary> addDiary(@PathVariable Integer userId, @RequestBody Diary diary){
+
+        var user = userRepository.findUserById(userId);
+        diary.setUser(user);
+        diary.setPublicationTime(OffsetDateTime.now());
+        // todo: в будущем переделать без поиска в репозитории, а сразу получать весь объект, пока нет фронта - заглушка
+        if (diary.getGame() != null){
+            var game = gameRepository.findGameById(diary.getGame().getId());
+            diary.setGame(game);
+        }
+
+        diaryRepository.save(diary);
+
+        return new ResponseEntity<>(diary, HttpStatus.OK);
+    }
+
+    @Transactional
+    @DeleteMapping("{userId}/remove-diary/{diaryId}")
+    public ResponseEntity<String> deleteDiary(@PathVariable Integer userId, @PathVariable Integer diaryId){
+
+        var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
+
+        diaryRepository.delete(diary);
+
+        return new ResponseEntity<>("Дневник " + diary.getTitle() + " удален из ваших дневников", HttpStatus.OK);
+    }
+
+    @Transactional
+    @GetMapping({"{userId}/diary-list"})
+    public ResponseEntity<List<Diary>> getListDiary(@PathVariable Integer userId){
+        var diaries = diaryRepository.findDiary_ByUserId(userId);
+
+        return new ResponseEntity<>(diaries, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PutMapping({"{userId}/update-diary/{diaryId}"})
+    public ResponseEntity<Diary> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest){
+        //посмотреть на обновление продаваемой игры
+
+        var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
+        if (diaryRequest.getTitle() != null && !Objects.equals(diary.getTitle(), diaryRequest.getTitle())){
+            diary.setTitle(diaryRequest.getTitle());
+        }
+        if (diaryRequest.getText() != null && !Objects.equals(diary.getText(), diaryRequest.getText())) {
+            diary.setText(diaryRequest.getText());
+        }
+
+        diaryRepository.save(diary);
+
+        return new ResponseEntity<>(diary, HttpStatus.OK);
+    }
+
+
+
+    //todo: optimize response - not whole model, only needed fields
+    //todo: add news
     //todo: diary
     //todo: edit user
     //todo: add game

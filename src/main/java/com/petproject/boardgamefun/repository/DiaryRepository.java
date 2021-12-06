@@ -7,13 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface DiaryRepository extends JpaRepository<Diary, Integer> {
-    Diary findByUserAndId(User user, Integer id);
-
-
     Diary findDiary_ByUserIdAndId(Integer userId, Integer id);
 
-
     List<Diary>findDiary_ByUserId(Integer userId);
+
+    Diary findDiaryById(Integer id);
 
 
 }

@@ -1,6 +1,7 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.GameRatingDTO;
+import com.petproject.boardgamefun.dto.DiariesWithRatingsResponse;
+import com.petproject.boardgamefun.dto.UserGameRatingDTO;
 import com.petproject.boardgamefun.dto.GameSellDTO;
 import com.petproject.boardgamefun.model.*;
 import com.petproject.boardgamefun.repository.*;
@@ -137,9 +138,9 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/games-rating")
-    public ResponseEntity<List<GameRatingDTO>> getUserRatingList(@PathVariable Integer userId) {
+    public ResponseEntity<List<UserGameRatingDTO>> getUserRatingList(@PathVariable Integer userId) {
 
-        var ratingGamesByUser = gameRepository.findGameRatingList(userId);
+        var ratingGamesByUser = gameRepository.findUserGameRatingList(userId);
 
         return new ResponseEntity<>(ratingGamesByUser, HttpStatus.OK);
     }
@@ -299,8 +300,8 @@ public class UserController {
 
     @Transactional
     @GetMapping({"{userId}/diary-list"})
-    public ResponseEntity<List<Diary>> getListDiary(@PathVariable Integer userId){
-        var diaries = diaryRepository.findDiary_ByUserId(userId);
+    public ResponseEntity<List<DiariesWithRatingsResponse>> getListDiary(@PathVariable Integer userId){
+        var diaries = diaryRepository.findUserDiaries(userId);
 
         return new ResponseEntity<>(diaries, HttpStatus.OK);
     }
@@ -308,7 +309,6 @@ public class UserController {
     @Transactional
     @PutMapping({"{userId}/update-diary/{diaryId}"})
     public ResponseEntity<Diary> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest){
-        //посмотреть на обновление продаваемой игры
 
         var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
         if (diaryRequest.getTitle() != null && !Objects.equals(diary.getTitle(), diaryRequest.getTitle())){

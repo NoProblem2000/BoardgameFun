@@ -4,4 +4,5 @@ import com.petproject.boardgamefun.model.GameSell;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GameSellRepository extends JpaRepository<GameSell, Integer> {
+    GameSell findGameSell_ByGameIdAndUserId(Integer gameId, Integer userId);
 }

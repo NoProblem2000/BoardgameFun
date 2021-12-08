@@ -1,7 +1,8 @@
 package com.petproject.boardgamefun.model;
 
 import javax.persistence.*;
-import java.time.OffsetTime;
+import java.time.OffsetDateTime;
+
 
 @Table(name = "diary_comment")
 @Entity
@@ -16,7 +17,7 @@ public class DiaryComment {
     private String comment;
 
     @Column(name = "comment_time", nullable = false)
-    private OffsetTime commentTime;
+    private OffsetDateTime commentTime;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "diary", nullable = false)
@@ -42,11 +43,11 @@ public class DiaryComment {
         this.diary = diary;
     }
 
-    public OffsetTime getCommentTime() {
+    public OffsetDateTime getCommentTime() {
         return commentTime;
     }
 
-    public void setCommentTime(OffsetTime commentTime) {
+    public void setCommentTime(OffsetDateTime commentTime) {
         this.commentTime = commentTime;
     }
 

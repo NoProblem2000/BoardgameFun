@@ -3,7 +3,7 @@ package com.petproject.boardgamefun.model;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
-import java.time.OffsetTime;
+import java.time.OffsetDateTime;
 
 @Table(name = "game", indexes = {
         @Index(name = "game_un", columnList = "title", unique = true)
@@ -19,7 +19,7 @@ public class Game {
     private String title;
 
     @Column(name = "year_of_release", nullable = false)
-    private OffsetTime yearOfRelease;
+    private OffsetDateTime yearOfRelease;
 
     @Lob
     @Type(type = "org.hibernate.type.TextType")
@@ -113,11 +113,11 @@ public class Game {
         this.annotation = annotation;
     }
 
-    public OffsetTime getYearOfRelease() {
+    public OffsetDateTime getYearOfRelease() {
         return yearOfRelease;
     }
 
-    public void setYearOfRelease(OffsetTime yearOfRelease) {
+    public void setYearOfRelease(OffsetDateTime yearOfRelease) {
         this.yearOfRelease = yearOfRelease;
     }
 

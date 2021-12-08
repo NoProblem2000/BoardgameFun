@@ -362,12 +362,9 @@ public class UserController {
         return new ResponseEntity<>(diary, HttpStatus.OK);
     }
 
-
-
     //todo: optimize response - not whole model, only needed fields
     //todo: add news
-    //todo: diary
-
-    //todo: add game
+    //todo: add rights
+    //todo: unique repository???
 
 }

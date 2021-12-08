@@ -1,8 +1,6 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.DiariesWithRatingsResponse;
-import com.petproject.boardgamefun.dto.UserGameRatingDTO;
-import com.petproject.boardgamefun.dto.GameSellDTO;
+import com.petproject.boardgamefun.dto.*;
 import com.petproject.boardgamefun.model.*;
 import com.petproject.boardgamefun.repository.*;
 import com.petproject.boardgamefun.security.jwt.JwtUtils;
@@ -20,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.transaction.Transactional;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -97,12 +96,52 @@ public class UserController {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
+    @Transactional
+    @PatchMapping("/edit/{userId}")
+    public ResponseEntity<?> editUser(@PathVariable Integer userId, @RequestBody UserEditRequest userEditRequest){
+        var user = userRepository.findUserById(userId);
+        if (userEditRequest.getName() != null && !userRepository.existsByName(userEditRequest.getName())) {
+            user.setName(userEditRequest.getName());
+        }
+        else{
+            return new ResponseEntity<>("Пользователь с таким никнеймом уже существует", HttpStatus.BAD_REQUEST);
+        }
+        if (userEditRequest.getRole() != null && !Objects.equals(userEditRequest.getRole(), user.getRole())){
+            user.setRole(userEditRequest.getRole());
+        }
+        if (userEditRequest.getAvatar() != null && !Arrays.equals(userEditRequest.getAvatar(), user.getAvatar())){
+            user.setAvatar(userEditRequest.getAvatar());
+        }
+
+        userRepository.save(user);
+
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PatchMapping("/change-password/{userId}")
+    public ResponseEntity<?> changePassword(@PathVariable Integer userId, @RequestBody PasswordChangeRequest passwordRequest){
+        var user = userRepository.findUserById(userId);
+        if (passwordRequest.getPassword() != null && passwordEncoder.matches(passwordRequest.getPassword(), user.getPassword())){
+            user.setPassword(passwordEncoder.encode(passwordRequest.getPassword()));
+        }
+        else {
+            return new ResponseEntity<>("Вы ввели точно такой же пароль", HttpStatus.BAD_REQUEST);
+        }
+        userRepository.save(user);
+
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+
+    @Transactional
     @GetMapping("{id}")
     public ResponseEntity<User> getUser(@PathVariable Integer id) {
         var user = userRepository.findUserById(id);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
+    @Transactional
     @GetMapping("/{id}/games")
     public ResponseEntity<List<Game>> getUserCollectionByType(@PathVariable Integer id) {
 
@@ -328,7 +367,7 @@ public class UserController {
     //todo: optimize response - not whole model, only needed fields
     //todo: add news
     //todo: diary
-    //todo: edit user
+
     //todo: add game
 
 }

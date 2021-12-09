@@ -1,5 +1,6 @@
 package com.petproject.boardgamefun.repository;
 
+import com.petproject.boardgamefun.dto.GameWithAverageRatingDTO;
 import com.petproject.boardgamefun.dto.UserGameRatingDTO;
 import com.petproject.boardgamefun.dto.GameSellDTO;
 import com.petproject.boardgamefun.model.Game;
@@ -11,6 +12,16 @@ import java.util.List;
 public interface GameRepository extends JpaRepository<Game, Integer> {
     Game findGameByTitle(String title);
     Game findGameById(Integer id);
+
+    @Query("select g as game, avg(rgbu.rating) as rating from Game g " +
+            "join RatingGameByUser rgbu on rgbu.game.id = g.id " +
+            "where g.id = :id ")
+    GameWithAverageRatingDTO findGameWithRating(Integer id);
+
+    @Query("select g as game, avg(rgbu.rating) as rating from Game g " +
+            "join RatingGameByUser rgbu on rgbu.game.id = g.id " +
+            "group by g")
+    List<GameWithAverageRatingDTO> findGamesWithRating();
 
     @Query("Select g from Game g " +
             "join UserOwnGame uog on g.id = uog.game.id " +

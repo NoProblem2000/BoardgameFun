@@ -42,4 +42,9 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
             "join Expansion ex on ex.daughterGame.id = g.id " +
             "where ex.parentGame.id = :parentGameId")
     List<Game> getExpansions(Integer parentGameId);
+
+    @Query("select g from Game g " +
+            "join SameGame sg on sg.sourceGame.id = g.id " +
+            "where sg.referenceGame.id = :referenceGameId")
+    List<Game> getSimilarGames(Integer referenceGameId);
 }

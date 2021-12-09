@@ -2,8 +2,10 @@ package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.model.Expansion;
 import com.petproject.boardgamefun.model.Game;
+import com.petproject.boardgamefun.model.SameGame;
 import com.petproject.boardgamefun.repository.ExpansionRepository;
 import com.petproject.boardgamefun.repository.GameRepository;
+import com.petproject.boardgamefun.repository.SameGameRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +20,12 @@ public class GameController {
 
     final GameRepository gameRepository;
     final ExpansionRepository expansionRepository;
+    final SameGameRepository sameGameRepository;
 
-    public GameController(GameRepository gameRepository, ExpansionRepository expansionRepository) {
+    public GameController(GameRepository gameRepository, ExpansionRepository expansionRepository, SameGameRepository sameGameRepository) {
         this.gameRepository = gameRepository;
         this.expansionRepository = expansionRepository;
+        this.sameGameRepository = sameGameRepository;
     }
 
     @Transactional
@@ -97,7 +101,43 @@ public class GameController {
         return new ResponseEntity<>(gamesExpansions, HttpStatus.OK);
     }
 
-    //todo: add same game
+    @Transactional
+    @GetMapping("/similar/{gameId}")
+    public ResponseEntity<List<Game>> getSimilarGames(@PathVariable Integer gameId){
+       var similarGames = gameRepository.getSimilarGames(gameId);
+
+        return new ResponseEntity<>(similarGames, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PostMapping("/add-similar/{referenceGameId}/{sourceGameId}")
+    public ResponseEntity<List<Game>> addSimilarGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId){
+        var referenceGame = gameRepository.findGameById(referenceGameId);
+        var sourceGame = gameRepository.findGameById(sourceGameId);
+
+        var sameGame = new SameGame();
+        sameGame.setReferenceGame(referenceGame);
+        sameGame.setSourceGame(sourceGame);
+        sameGameRepository.save(sameGame);
+
+        var sameGames = gameRepository.getSimilarGames(referenceGameId);
+
+        return new ResponseEntity<>(sameGames, HttpStatus.OK);
+    }
+
+    @Transactional
+    @DeleteMapping("/delete-similar/{referenceGameId}/{sourceGameId}")
+    public ResponseEntity<List<Game>> deleteSameGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId){
+        var sameGame = sameGameRepository.findSameGame_ByReferenceGameIdAndSourceGameId(referenceGameId, sourceGameId);
+        sameGameRepository.delete(sameGame);
+
+        var sameGames = gameRepository.getSimilarGames(referenceGameId);
+
+        return new ResponseEntity<>(sameGames, HttpStatus.OK);
+    }
+
+
+
     //todo: ratings list
     //todo: forum
     //todo: gat avg rating

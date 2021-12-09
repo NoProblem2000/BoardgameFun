@@ -37,4 +37,9 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
             "join User u on u.id = gs.user.id " +
             "where u.id = :id")
     List<GameSellDTO> getGameSellList(Integer id);
+
+    @Query("select g from Game g " +
+            "join Expansion ex on ex.daughterGame.id = g.id " +
+            "where ex.parentGame.id = :parentGameId")
+    List<Game> getExpansions(Integer parentGameId);
 }

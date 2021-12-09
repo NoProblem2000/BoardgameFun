@@ -1,6 +1,8 @@
 package com.petproject.boardgamefun.controller;
 
+import com.petproject.boardgamefun.model.Expansion;
 import com.petproject.boardgamefun.model.Game;
+import com.petproject.boardgamefun.repository.ExpansionRepository;
 import com.petproject.boardgamefun.repository.GameRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +17,11 @@ import java.util.List;
 public class GameController {
 
     final GameRepository gameRepository;
+    final ExpansionRepository expansionRepository;
 
-    public GameController(GameRepository gameRepository) {
+    public GameController(GameRepository gameRepository, ExpansionRepository expansionRepository) {
         this.gameRepository = gameRepository;
+        this.expansionRepository = expansionRepository;
     }
 
     @Transactional
@@ -58,4 +62,43 @@ public class GameController {
         return new ResponseEntity<>(deleteGame.getTitle() + " удалена из базы данных", HttpStatus.OK);
     }
 
+    @Transactional
+    @GetMapping("/expansions/{gameId}")
+    public ResponseEntity<List<Game>> getExpansions(@PathVariable Integer gameId){
+        var gamesExpansions = gameRepository.getExpansions(gameId);
+
+        return new ResponseEntity<>(gamesExpansions, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PostMapping("/add-expansion/{parentGameId}/{daughterGameId}")
+    public ResponseEntity<List<Game>> addExpansion(@PathVariable Integer parentGameId, @PathVariable Integer daughterGameId){
+        var parentGame = gameRepository.findGameById(parentGameId);
+        var daughterGame = gameRepository.findGameById(daughterGameId);
+
+        var expansion = new Expansion();
+        expansion.setParentGame(parentGame);
+        expansion.setDaughterGame(daughterGame);
+        expansionRepository.save(expansion);
+
+        var gamesExpansions = gameRepository.getExpansions(parentGameId);
+
+        return new ResponseEntity<>(gamesExpansions, HttpStatus.OK);
+    }
+
+    @Transactional
+    @DeleteMapping("/delete-expansion/{parentGameId}/{daughterGameId}")
+    public ResponseEntity<List<Game>> deleteExpansion(@PathVariable Integer daughterGameId, @PathVariable Integer parentGameId){
+        var expansion = expansionRepository.findExpansion_ByDaughterGameIdAndParentGameId(daughterGameId, parentGameId);
+        expansionRepository.delete(expansion);
+
+        var gamesExpansions = gameRepository.getExpansions(parentGameId);
+
+        return new ResponseEntity<>(gamesExpansions, HttpStatus.OK);
+    }
+
+    //todo: add same game
+    //todo: ratings list
+    //todo: forum
+    //todo: gat avg rating
 }

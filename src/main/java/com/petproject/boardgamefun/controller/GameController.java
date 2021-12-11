@@ -158,6 +158,7 @@ public class GameController {
     }
 
 
+    //todo: designers
     //todo: ratings list
     //todo: forum
     //todo: gat avg rating

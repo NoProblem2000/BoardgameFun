@@ -1,7 +1,10 @@
 package com.petproject.boardgamefun.controller;
 
+import com.petproject.boardgamefun.dto.ForumMessageRequest;
 import com.petproject.boardgamefun.dto.ForumRequest;
 import com.petproject.boardgamefun.model.Forum;
+import com.petproject.boardgamefun.model.ForumMessage;
+import com.petproject.boardgamefun.repository.ForumMessageRepository;
 import com.petproject.boardgamefun.repository.ForumRepository;
 import com.petproject.boardgamefun.repository.GameRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
@@ -22,26 +25,26 @@ public class ForumController {
     private final ForumRepository forumRepository;
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
+    private final ForumMessageRepository forumMessageRepository;
 
-    public ForumController(ForumRepository forumRepository, GameRepository gameRepository, UserRepository userRepository) {
+    public ForumController(ForumRepository forumRepository, GameRepository gameRepository, UserRepository userRepository, ForumMessageRepository forumMessageRepository) {
         this.forumRepository = forumRepository;
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
+        this.forumMessageRepository = forumMessageRepository;
     }
 
     @Transactional
     @GetMapping("")
     public ResponseEntity<List<Forum>> getForums(@RequestParam(required = false) Integer gameId, @RequestParam(required = false) Integer userId) {
-       List<Forum> forums;
-       if (gameId != null){
-           forums = forumRepository.findForumsByGameId(gameId);
-       }
-       else if (userId != null){
-           forums = forumRepository.findForumsByUserId(userId);
-       }
-       else {
-           forums = forumRepository.findAll();
-       }
+        List<Forum> forums;
+        if (gameId != null) {
+            forums = forumRepository.findForumsByGameId(gameId);
+        } else if (userId != null) {
+            forums = forumRepository.findForumsByUserId(userId);
+        } else {
+            forums = forumRepository.findAll();
+        }
 
         return new ResponseEntity<>(forums, HttpStatus.OK);
     }
@@ -83,12 +86,71 @@ public class ForumController {
 
     @Transactional
     @DeleteMapping("/delete-forum/{forumId}")
-    public ResponseEntity<String> deleteForum(@PathVariable Integer forumId){
+    public ResponseEntity<String> deleteForum(@PathVariable Integer forumId) {
 
         var forum = forumRepository.findForumById(forumId);
         forumRepository.delete(forum);
 
         return new ResponseEntity<>("Топик " + forum.getTitle() + " удален из игры", HttpStatus.OK);
+    }
+
+    @Transactional
+    @GetMapping("/messages")
+    public ResponseEntity<List<ForumMessage>> getComments(@RequestParam(required = false) Integer forumId, @RequestParam(required = false) Integer userId) {
+        List<ForumMessage> messages;
+        if (forumId != null)
+            messages = forumMessageRepository.findByForumId(forumId);
+        else if (userId != null)
+            messages = forumMessageRepository.findByUserId(userId);
+        else
+            messages = forumMessageRepository.findAll();
+
+        return new ResponseEntity<>(messages, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PostMapping("/{forumId}/add-comment/{userId}")
+    public ResponseEntity<List<ForumMessage>> addMessage(@PathVariable Integer forumId, @PathVariable Integer userId, @RequestBody ForumMessageRequest forumMessageRequest) {
+        var forum = forumRepository.findForumById(forumId);
+        var user = userRepository.findUserById(userId);
+
+        var forumMessage = new ForumMessage();
+        forumMessage.setForum(forum);
+        forumMessage.setUser(user);
+        forumMessage.setTime(OffsetDateTime.now());
+        forumMessage.setComment(forumMessageRequest.getComment());
+
+        forumMessageRepository.save(forumMessage);
+
+        var messages = forumMessageRepository.findByForumId(forumId);
+
+        return new ResponseEntity<>(messages, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PatchMapping("/{forumId}/update-message/{messageId}")
+    public ResponseEntity<List<ForumMessage>> updateMessage(@PathVariable Integer messageId, @PathVariable Integer forumId, @RequestBody ForumMessageRequest forumMessageRequest) {
+        var message = forumMessageRepository.findForumMessageById(messageId);
+
+        if (!Objects.equals(forumMessageRequest.getComment(), message.getComment()))
+            message.setComment(forumMessageRequest.getComment());
+
+        forumMessageRepository.save(message);
+
+        var messages = forumMessageRepository.findByForumId(forumId);
+
+        return new ResponseEntity<>(messages, HttpStatus.OK);
+    }
+
+    @Transactional
+    @DeleteMapping("/{forumId}/delete-message/{messageId}")
+    public ResponseEntity<List<ForumMessage>> deleteMessage(@PathVariable Integer forumId, @PathVariable Integer messageId ) {
+        var message = forumMessageRepository.findForumMessageById(messageId);
+
+        forumMessageRepository.delete(message);
+
+        var messages = forumMessageRepository.findByForumId(forumId);
+        return new ResponseEntity<>(messages, HttpStatus.OK);
     }
 
     //todo: union patch method???

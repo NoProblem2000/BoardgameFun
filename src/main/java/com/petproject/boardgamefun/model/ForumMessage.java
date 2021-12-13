@@ -1,6 +1,7 @@
 package com.petproject.boardgamefun.model;
 
 import javax.persistence.*;
+import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 
 @Table(name = "forum_message")
@@ -23,14 +24,14 @@ public class ForumMessage {
     @JoinColumn(name = "\"user\"", nullable = false)
     private User user;
 
-    @Column(name = "\"time\"", nullable = false)
-    private OffsetTime time;
+    @Column(name = "\"time_message\"", nullable = false)
+    private OffsetDateTime time;
 
-    public OffsetTime getTime() {
+    public OffsetDateTime getTime() {
         return time;
     }
 
-    public void setTime(OffsetTime time) {
+    public void setTime(OffsetDateTime time) {
         this.time = time;
     }
 

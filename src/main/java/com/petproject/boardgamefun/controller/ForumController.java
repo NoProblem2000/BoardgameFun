@@ -1,13 +1,12 @@
 package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.ForumMessageRequest;
+import com.petproject.boardgamefun.dto.ForumRatingRequest;
 import com.petproject.boardgamefun.dto.ForumRequest;
 import com.petproject.boardgamefun.model.Forum;
 import com.petproject.boardgamefun.model.ForumMessage;
-import com.petproject.boardgamefun.repository.ForumMessageRepository;
-import com.petproject.boardgamefun.repository.ForumRepository;
-import com.petproject.boardgamefun.repository.GameRepository;
-import com.petproject.boardgamefun.repository.UserRepository;
+import com.petproject.boardgamefun.model.ForumRating;
+import com.petproject.boardgamefun.repository.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,12 +25,14 @@ public class ForumController {
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
     private final ForumMessageRepository forumMessageRepository;
+    private final ForumRatingRepository forumRatingRepository;
 
-    public ForumController(ForumRepository forumRepository, GameRepository gameRepository, UserRepository userRepository, ForumMessageRepository forumMessageRepository) {
+    public ForumController(ForumRepository forumRepository, GameRepository gameRepository, UserRepository userRepository, ForumMessageRepository forumMessageRepository, ForumRatingRepository forumRatingRepository) {
         this.forumRepository = forumRepository;
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.forumMessageRepository = forumMessageRepository;
+        this.forumRatingRepository = forumRatingRepository;
     }
 
     @Transactional
@@ -151,6 +152,37 @@ public class ForumController {
 
         var messages = forumMessageRepository.findByForumId(forumId);
         return new ResponseEntity<>(messages, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PostMapping("/{forumId}/set-rating/{userId}")
+    public ResponseEntity<Forum> setForumRating(@PathVariable Integer forumId, @PathVariable Integer userId, @RequestBody ForumRatingRequest forumRatingRequest){
+
+        var forumRating =  forumRatingRepository.findForumRating_ByForumIdAndUserId(forumId, userId);
+        if (forumRating == null){
+            var forum = forumRepository.findForumById(forumId);
+            var user = userRepository.findUserById(userId);
+
+            forumRating = new ForumRating();
+            forumRating.setForum(forum);
+            forumRating.setUser(user);
+        }
+        forumRating.setRating(forumRatingRequest.getRating());
+
+        forumRatingRepository.save(forumRating);
+        var forum = forumRepository.findForumById(forumId);
+        return new ResponseEntity<>(forum, HttpStatus.OK);
+    }
+
+    @Transactional
+    @DeleteMapping("/{forumId}/remove-rating/{ratingId}")
+    public ResponseEntity<Forum> removeRatingFromForum(@PathVariable Integer forumId, @PathVariable Integer ratingId){
+        var forumRating = forumRatingRepository.findForumRatingById(ratingId);
+        forumRatingRepository.delete(forumRating);
+
+        var forum = forumRepository.findForumById(forumId);
+
+        return new ResponseEntity<>(forum, HttpStatus.OK);
     }
 
     //todo: union patch method???

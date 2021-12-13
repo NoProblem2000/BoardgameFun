@@ -109,7 +109,7 @@ public class ForumController {
     }
 
     @Transactional
-    @PostMapping("/{forumId}/add-comment/{userId}")
+    @PostMapping("/{forumId}/add-message/{userId}")
     public ResponseEntity<List<ForumMessage>> addMessage(@PathVariable Integer forumId, @PathVariable Integer userId, @RequestBody ForumMessageRequest forumMessageRequest) {
         var forum = forumRepository.findForumById(forumId);
         var user = userRepository.findUserById(userId);

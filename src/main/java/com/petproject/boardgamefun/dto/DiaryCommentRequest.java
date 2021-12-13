@@ -1,12 +1,8 @@
 package com.petproject.boardgamefun.dto;
 
-import lombok.*;
+import lombok.Data;
 
 @Data
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
 public class DiaryCommentRequest {
     private String comment;
 }

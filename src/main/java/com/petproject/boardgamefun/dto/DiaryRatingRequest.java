@@ -1,12 +1,8 @@
 package com.petproject.boardgamefun.dto;
 
-import lombok.*;
+import lombok.Data;
 
 @Data
-@Setter
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
 public class DiaryRatingRequest {
     private Double rating;
 }

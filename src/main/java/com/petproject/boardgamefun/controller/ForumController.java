@@ -1,5 +1,6 @@
 package com.petproject.boardgamefun.controller;
 
+import com.petproject.boardgamefun.dto.ForumDTO;
 import com.petproject.boardgamefun.dto.ForumMessageRequest;
 import com.petproject.boardgamefun.dto.ForumRatingRequest;
 import com.petproject.boardgamefun.dto.ForumRequest;
@@ -37,14 +38,14 @@ public class ForumController {
 
     @Transactional
     @GetMapping("")
-    public ResponseEntity<List<Forum>> getForums(@RequestParam(required = false) Integer gameId, @RequestParam(required = false) Integer userId) {
-        List<Forum> forums;
+    public ResponseEntity<List<ForumDTO>> getForums(@RequestParam(required = false) Integer gameId, @RequestParam(required = false) Integer userId) {
+        List<ForumDTO> forums;
         if (gameId != null) {
-            forums = forumRepository.findForumsByGameId(gameId);
+            forums = forumRepository.findForumsGameWithRating(gameId);
         } else if (userId != null) {
-            forums = forumRepository.findForumsByUserId(userId);
+            forums = forumRepository.findForumsUserWithRating(userId);
         } else {
-            forums = forumRepository.findAll();
+            forums = forumRepository.findForumsWithRating();
         }
 
         return new ResponseEntity<>(forums, HttpStatus.OK);

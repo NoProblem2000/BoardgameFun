@@ -41,9 +41,10 @@ public class GameController {
     }
 
     @Transactional
-    @GetMapping("{title}")
-    ResponseEntity<Game> getGame(@PathVariable String title) {
-        var game = gameRepository.findGameByTitle(title);
+    @GetMapping("{id}")
+    ResponseEntity<GameWithAverageRatingDTO> getGameById(@PathVariable Integer id){
+        var game = gameRepository.findGameWithRating(id);
+
         return new ResponseEntity<>(game, HttpStatus.OK);
     }
 
@@ -160,6 +161,4 @@ public class GameController {
 
     //todo: designers
     //todo: ratings list
-    //todo: forum
-    //todo: gat avg rating
 }

@@ -10,12 +10,12 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface GameRepository extends JpaRepository<Game, Integer> {
-    Game findGameByTitle(String title);
     Game findGameById(Integer id);
 
     @Query("select g as game, avg(rgbu.rating) as rating from Game g " +
             "join RatingGameByUser rgbu on rgbu.game.id = g.id " +
-            "where g.id = :id ")
+            "where g.id = :id " +
+            "group by g")
     GameWithAverageRatingDTO findGameWithRating(Integer id);
 
     @Query("select g as game, avg(rgbu.rating) as rating from Game g " +

@@ -1,6 +1,6 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.GameWithAverageRatingDTO;
+import com.petproject.boardgamefun.dto.GameDTO;
 import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
 import com.petproject.boardgamefun.model.Expansion;
 import com.petproject.boardgamefun.model.Game;
@@ -35,18 +35,27 @@ public class GameController {
 
     @Transactional
     @GetMapping()
-    ResponseEntity<List<Game>> getGames() {
-        var games = gameRepository.findAll();
+    ResponseEntity<List<GameDTO>> getGames() {
+
+        var games = gameRepository.findGames();
+
         return new ResponseEntity<>(games, HttpStatus.OK);
     }
 
     @Transactional
-    @GetMapping("{id}")
-    ResponseEntity<GameWithAverageRatingDTO> getGameById(@PathVariable Integer id){
-        var game = gameRepository.findGameWithRating(id);
+    @GetMapping("/get-game")
+    public ResponseEntity<GameDTO> getGameByCriteria(@RequestParam(required = false) Integer id,
+                                                     @RequestParam(required = false) String title) {
+        GameDTO game = null;
+
+        if (id != null)
+            game = gameRepository.findGame(id);
+        else if (title != null)
+            game = gameRepository.findGameUsingTitle(title);
 
         return new ResponseEntity<>(game, HttpStatus.OK);
     }
+
 
     @Transactional
     @PostMapping("/add")
@@ -153,12 +162,17 @@ public class GameController {
 
     @Transactional
     @GetMapping("/with-rating")
-    public ResponseEntity<List<GameWithAverageRatingDTO>> getGamesWithRating() {
-        var games = gameRepository.findGamesWithRating();
+    public ResponseEntity<List<GameDTO>> getGamesWithRating() {
+        var games = gameRepository.findGames();
         return new ResponseEntity<>(games, HttpStatus.OK);
     }
+
+    //Поменять на тип текст либо убрать аннотацию
+
+
 
 
     //todo: designers
     //todo: ratings list
+    //todo: get games by designer
 }

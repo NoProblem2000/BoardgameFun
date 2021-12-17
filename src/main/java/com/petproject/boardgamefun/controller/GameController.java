@@ -1,8 +1,8 @@
 package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.GameDTO;
-import com.petproject.boardgamefun.dto.GameProjection;
-import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
+import com.petproject.boardgamefun.dto.projection.GameProjection;
+import com.petproject.boardgamefun.dto.projection.UsersGameRatingProjection;
 import com.petproject.boardgamefun.model.Expansion;
 import com.petproject.boardgamefun.model.Game;
 import com.petproject.boardgamefun.model.GameByDesigner;
@@ -159,7 +159,7 @@ public class GameController {
 
     @Transactional
     @GetMapping("/{gameId}/users-rating")
-    public ResponseEntity<List<UsersGameRatingDTO>> getUsersRating(@PathVariable Integer gameId) {
+    public ResponseEntity<List<UsersGameRatingProjection>> getUsersRating(@PathVariable Integer gameId) {
 
         var ratings = userRepository.findGameRatings(gameId);
 

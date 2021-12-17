@@ -1,6 +1,6 @@
 package com.petproject.boardgamefun.repository;
 
-import com.petproject.boardgamefun.dto.DesignersProjection;
+import com.petproject.boardgamefun.dto.projection.DesignersProjection;
 import com.petproject.boardgamefun.model.Designer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

@@ -1,6 +1,6 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.DesignerRequest;
+import com.petproject.boardgamefun.dto.request.DesignerRequest;
 import com.petproject.boardgamefun.model.Designer;
 import com.petproject.boardgamefun.repository.DesignerRepository;
 import org.springframework.http.HttpStatus;

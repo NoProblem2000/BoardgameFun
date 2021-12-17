@@ -1,9 +1,9 @@
 package com.petproject.boardgamefun.service;
 
-import com.petproject.boardgamefun.dto.DesignersProjection;
+import com.petproject.boardgamefun.dto.projection.DesignersProjection;
 import com.petproject.boardgamefun.dto.GameDTO;
-import com.petproject.boardgamefun.dto.GamesFilterByTitleProjection;
-import com.petproject.boardgamefun.dto.GameProjection;
+import com.petproject.boardgamefun.dto.projection.GamesFilterByTitleProjection;
+import com.petproject.boardgamefun.dto.projection.GameProjection;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.petproject.boardgamefun.dto;
+package com.petproject.boardgamefun.dto.projection;
 
 import com.petproject.boardgamefun.model.Game;
 

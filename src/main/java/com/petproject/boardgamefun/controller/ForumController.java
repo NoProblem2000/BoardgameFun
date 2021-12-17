@@ -1,9 +1,9 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.ForumDTO;
-import com.petproject.boardgamefun.dto.ForumMessageRequest;
-import com.petproject.boardgamefun.dto.ForumRatingRequest;
-import com.petproject.boardgamefun.dto.ForumRequest;
+import com.petproject.boardgamefun.dto.projection.ForumProjection;
+import com.petproject.boardgamefun.dto.request.ForumMessageRequest;
+import com.petproject.boardgamefun.dto.request.ForumRatingRequest;
+import com.petproject.boardgamefun.dto.request.ForumRequest;
 import com.petproject.boardgamefun.model.Forum;
 import com.petproject.boardgamefun.model.ForumMessage;
 import com.petproject.boardgamefun.model.ForumRating;
@@ -38,8 +38,8 @@ public class ForumController {
 
     @Transactional
     @GetMapping("")
-    public ResponseEntity<List<ForumDTO>> getForums(@RequestParam(required = false) Integer gameId, @RequestParam(required = false) Integer userId) {
-        List<ForumDTO> forums;
+    public ResponseEntity<List<ForumProjection>> getForums(@RequestParam(required = false) Integer gameId, @RequestParam(required = false) Integer userId) {
+        List<ForumProjection> forums;
         if (gameId != null) {
             forums = forumRepository.findForumsGameWithRating(gameId);
         } else if (userId != null) {

@@ -1,4 +1,4 @@
-package com.petproject.boardgamefun.dto;
+package com.petproject.boardgamefun.dto.request;
 
 import lombok.Data;
 

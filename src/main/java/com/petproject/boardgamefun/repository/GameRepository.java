@@ -1,9 +1,9 @@
 package com.petproject.boardgamefun.repository;
 
-import com.petproject.boardgamefun.dto.GameProjection;
-import com.petproject.boardgamefun.dto.GamesFilterByTitleProjection;
-import com.petproject.boardgamefun.dto.UserGameRatingDTO;
-import com.petproject.boardgamefun.dto.GameSellDTO;
+import com.petproject.boardgamefun.dto.projection.GameProjection;
+import com.petproject.boardgamefun.dto.projection.GamesFilterByTitleProjection;
+import com.petproject.boardgamefun.dto.projection.UserGameRatingProjection;
+import com.petproject.boardgamefun.dto.projection.GameSellProjection;
 import com.petproject.boardgamefun.model.Game;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -39,7 +39,7 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
             "join User u on u.id = rgbu.user.id " +
             "where u.id = :id " +
             "order by rgbu.rating desc")
-    List<UserGameRatingDTO> findUserGameRatingList(Integer id);
+    List<UserGameRatingProjection> findUserGameRatingList(Integer id);
 
     @Query("Select g from Game g " +
             "join UserWish uw on g.id = uw.game.id " +
@@ -52,7 +52,7 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
             "join GameSell gs on g.id = gs.game.id " +
             "join User u on u.id = gs.user.id " +
             "where u.id = :id")
-    List<GameSellDTO> getGameSellList(Integer id);
+    List<GameSellProjection> getGameSellList(Integer id);
 
     @Query("select g from Game g " +
             "join Expansion ex on ex.daughterGame.id = g.id " +

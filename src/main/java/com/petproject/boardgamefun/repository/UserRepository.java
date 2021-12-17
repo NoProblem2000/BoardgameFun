@@ -1,6 +1,6 @@
 package com.petproject.boardgamefun.repository;
 
-import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
+import com.petproject.boardgamefun.dto.projection.UsersGameRatingProjection;
 import com.petproject.boardgamefun.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,5 +17,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "join RatingGameByUser rgbu on rgbu.user.id = u.id " +
             "join Game g on g.id = rgbu.game.id " +
             "where g.id = :gameId")
-    List<UsersGameRatingDTO> findGameRatings(Integer gameId);
+    List<UsersGameRatingProjection> findGameRatings(Integer gameId);
 }

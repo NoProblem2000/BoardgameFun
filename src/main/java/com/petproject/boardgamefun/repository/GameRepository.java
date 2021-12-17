@@ -1,6 +1,7 @@
 package com.petproject.boardgamefun.repository;
 
 import com.petproject.boardgamefun.dto.GameProjection;
+import com.petproject.boardgamefun.dto.GamesFilterByTitleProjection;
 import com.petproject.boardgamefun.dto.UserGameRatingDTO;
 import com.petproject.boardgamefun.dto.GameSellDTO;
 import com.petproject.boardgamefun.model.Game;
@@ -18,11 +19,9 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
             "group by g")
     GameProjection findGame(Integer id);
 
-    @Query("select g as game, avg(rgbu.rating) as rating from Game g " +
-            "left join RatingGameByUser rgbu on rgbu.game.id = g.id " +
-            "where g.title = :title " +
-            "group by g")
-    GameProjection findGameUsingTitle(String title);
+    @Query("select g.title as title from Game g " +
+            "where g.title like :title%")
+    List<GamesFilterByTitleProjection> findGamesUsingTitle(String title);
 
     @Query("select g as game, avg(rgbu.rating) as rating from Game g " +
             "left join RatingGameByUser rgbu on rgbu.game.id = g.id " +

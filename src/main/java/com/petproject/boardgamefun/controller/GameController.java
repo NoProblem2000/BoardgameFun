@@ -49,17 +49,17 @@ public class GameController {
     }
 
     @Transactional
-    @GetMapping("/get-game")
-    public ResponseEntity<GameProjection> getGameByCriteria(@RequestParam(required = false) Integer id,
-                                                            @RequestParam(required = false) String title) {
-        GameProjection game = null;
+    @GetMapping("/get-game/{id}")
+    public ResponseEntity<GameDTO> getGameByCriteria(@PathVariable Integer id) {
+        var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGame(id), designerRepository.findDesignersUsingGame(id));
+        return new ResponseEntity<>(gameDTO, HttpStatus.OK);
+    }
 
-        if (id != null)
-            game = gameRepository.findGame(id);
-        else if (title != null)
-            game = gameRepository.findGameUsingTitle(title);
-
-        return new ResponseEntity<>(game, HttpStatus.OK);
+    @Transactional
+    @GetMapping("/get-games-by-filter/{title}")
+    public ResponseEntity<List<String>> getGamesByTitle(@PathVariable String title){
+        var games = gameService.getTitlesFromProjections(gameRepository.findGamesUsingTitle(title));
+        return new ResponseEntity<>(games, HttpStatus.OK);
     }
 
 

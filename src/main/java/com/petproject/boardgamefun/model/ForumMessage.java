@@ -1,5 +1,7 @@
 package com.petproject.boardgamefun.model;
 
+import org.hibernate.annotations.Type;
+
 import javax.persistence.*;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
@@ -17,6 +19,7 @@ public class ForumMessage {
     private Forum forum;
 
     @Lob
+    @Type(type = "org.hibernate.type.TextType")
     @Column(name = "comment", nullable = false)
     private String comment;
 

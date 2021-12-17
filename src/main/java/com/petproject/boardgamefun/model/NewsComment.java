@@ -1,5 +1,7 @@
 package com.petproject.boardgamefun.model;
 
+import org.hibernate.annotations.Type;
+
 import javax.persistence.*;
 import java.time.OffsetTime;
 
@@ -12,6 +14,7 @@ public class NewsComment {
     private Integer id;
 
     @Lob
+    @Type(type = "org.hibernate.type.TextType")
     @Column(name = "comment", nullable = false)
     private String comment;
 

@@ -10,20 +10,20 @@ import java.util.List;
 public interface ForumRepository extends JpaRepository<Forum, Integer> {
     @Query("select f as forum, avg(fr.rating) as rating from Forum f " +
             "join Game g on g.id = f.game.id " +
-            "join ForumRating fr on fr.forum.id = f.id " +
+            "left join ForumRating fr on fr.forum.id = f.id " +
             "where g.id = :gameId " +
             "group by f")
     List<ForumProjection> findForumsGameWithRating(Integer gameId);
 
     @Query("select f as forum, avg(fr.rating) as rating from Forum f " +
             "join User u on u.id = f.user.id " +
-            "join ForumRating fr on fr.forum.id = f.id " +
+            "left join ForumRating fr on fr.forum.id = f.id " +
             "where u.id = :userId " +
             "group by f")
     List<ForumProjection> findForumsUserWithRating(Integer userId);
 
     @Query("select f as forum, avg(fr.rating) as rating from Forum f " +
-           "join ForumRating fr on fr.forum.id = f.id " +
+           "left join ForumRating fr on fr.forum.id = f.id " +
             "group by f")
     List<ForumProjection> findForumsWithRating();
 

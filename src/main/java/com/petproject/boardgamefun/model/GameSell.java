@@ -1,5 +1,7 @@
 package com.petproject.boardgamefun.model;
 
+import org.hibernate.annotations.Type;
+
 import javax.persistence.*;
 
 @Table(name = "game_sell")
@@ -11,6 +13,7 @@ public class GameSell {
     private Integer id;
 
     @Lob
+    @Type(type = "org.hibernate.type.TextType")
     @Column(name = "condition", nullable = false)
     private String condition;
 
@@ -18,6 +21,7 @@ public class GameSell {
     private Integer price;
 
     @Lob
+    @Type(type = "org.hibernate.type.TextType")
     @Column(name = "comment", nullable = false)
     private String comment;
 

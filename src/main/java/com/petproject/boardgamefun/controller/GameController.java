@@ -1,14 +1,14 @@
 package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.GameDTO;
+import com.petproject.boardgamefun.dto.GameProjection;
 import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
 import com.petproject.boardgamefun.model.Expansion;
 import com.petproject.boardgamefun.model.Game;
+import com.petproject.boardgamefun.model.GameByDesigner;
 import com.petproject.boardgamefun.model.SameGame;
-import com.petproject.boardgamefun.repository.ExpansionRepository;
-import com.petproject.boardgamefun.repository.GameRepository;
-import com.petproject.boardgamefun.repository.SameGameRepository;
-import com.petproject.boardgamefun.repository.UserRepository;
+import com.petproject.boardgamefun.repository.*;
+import com.petproject.boardgamefun.service.GameService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,17 +25,23 @@ public class GameController {
     final UserRepository userRepository;
     final ExpansionRepository expansionRepository;
     final SameGameRepository sameGameRepository;
+    final DesignerRepository designerRepository;
+    final GameByDesignerRepository gameByDesignerRepository;
+    final GameService gameService;
 
-    public GameController(GameRepository gameRepository, UserRepository userRepository, ExpansionRepository expansionRepository, SameGameRepository sameGameRepository) {
+    public GameController(GameRepository gameRepository, UserRepository userRepository, ExpansionRepository expansionRepository, SameGameRepository sameGameRepository, DesignerRepository designerRepository, GameByDesignerRepository gameByDesignerRepository, GameService gameService) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.expansionRepository = expansionRepository;
         this.sameGameRepository = sameGameRepository;
+        this.designerRepository = designerRepository;
+        this.gameByDesignerRepository = gameByDesignerRepository;
+        this.gameService = gameService;
     }
 
     @Transactional
     @GetMapping()
-    ResponseEntity<List<GameDTO>> getGames() {
+    ResponseEntity<List<GameProjection>> getGames() {
 
         var games = gameRepository.findGames();
 
@@ -44,9 +50,9 @@ public class GameController {
 
     @Transactional
     @GetMapping("/get-game")
-    public ResponseEntity<GameDTO> getGameByCriteria(@RequestParam(required = false) Integer id,
-                                                     @RequestParam(required = false) String title) {
-        GameDTO game = null;
+    public ResponseEntity<GameProjection> getGameByCriteria(@RequestParam(required = false) Integer id,
+                                                            @RequestParam(required = false) String title) {
+        GameProjection game = null;
 
         if (id != null)
             game = gameRepository.findGame(id);
@@ -162,17 +168,44 @@ public class GameController {
 
     @Transactional
     @GetMapping("/with-rating")
-    public ResponseEntity<List<GameDTO>> getGamesWithRating() {
+    public ResponseEntity<List<GameProjection>> getGamesWithRating() {
         var games = gameRepository.findGames();
         return new ResponseEntity<>(games, HttpStatus.OK);
     }
 
     //Поменять на тип текст либо убрать аннотацию
 
+    @Transactional
+    @PostMapping("/{gameId}/set-designer/{designerId}")
+    public ResponseEntity<GameDTO> addDesignerToGame(@PathVariable Integer gameId, @PathVariable Integer designerId){
+        var game = gameRepository.findGameById(gameId);
+        var designer = designerRepository.findDesignerById(designerId);
+
+        var gameByDesigner = new GameByDesigner();
+        gameByDesigner.setDesigner(designer);
+        gameByDesigner.setGame(game);
+
+        gameByDesignerRepository.save(gameByDesigner);
+
+        var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGame(gameId),
+                designerRepository.findDesignersUsingGame(gameId));
+
+        return new ResponseEntity<>(gameDTO, HttpStatus.OK);
+    }
+
+    @Transactional
+    @DeleteMapping("{gameId}/remove-designer/{gameByDesignerId}")
+    public ResponseEntity<GameDTO> deleteDesignerFromGame(@PathVariable Integer gameId, @PathVariable Integer gameByDesignerId){
+
+        gameByDesignerRepository.deleteById(gameByDesignerId);
+
+        var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGame(gameId),
+                designerRepository.findDesignersUsingGame(gameId));
+
+        return new ResponseEntity<>(gameDTO, HttpStatus.OK);
+    }
 
 
-
-    //todo: designers
+    // todo: use standard hibernate deleteById and findById!!!
     //todo: ratings list
-    //todo: get games by designer
 }

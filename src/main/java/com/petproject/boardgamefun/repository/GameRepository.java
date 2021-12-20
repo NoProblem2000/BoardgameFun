@@ -1,7 +1,9 @@
 package com.petproject.boardgamefun.repository;
 
-import com.petproject.boardgamefun.dto.UserGameRatingDTO;
-import com.petproject.boardgamefun.dto.GameSellDTO;
+import com.petproject.boardgamefun.dto.projection.GameProjection;
+import com.petproject.boardgamefun.dto.projection.GamesFilterByTitleProjection;
+import com.petproject.boardgamefun.dto.projection.UserGameRatingProjection;
+import com.petproject.boardgamefun.dto.projection.GameSellProjection;
 import com.petproject.boardgamefun.model.Game;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -9,8 +11,22 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface GameRepository extends JpaRepository<Game, Integer> {
-    Game findGameByTitle(String title);
     Game findGameById(Integer id);
+
+    @Query("select g as game, avg(rgbu.rating) as rating from Game g " +
+            "left join RatingGameByUser rgbu on rgbu.game.id = g.id " +
+            "where g.id = :id " +
+            "group by g")
+    GameProjection findGame(Integer id);
+
+    @Query("select g.title as title from Game g " +
+            "where g.title like :title%")
+    List<GamesFilterByTitleProjection> findGamesUsingTitle(String title);
+
+    @Query("select g as game, avg(rgbu.rating) as rating from Game g " +
+            "left join RatingGameByUser rgbu on rgbu.game.id = g.id " +
+            "group by g")
+    List<GameProjection> findGames();
 
     @Query("Select g from Game g " +
             "join UserOwnGame uog on g.id = uog.game.id " +
@@ -23,7 +39,7 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
             "join User u on u.id = rgbu.user.id " +
             "where u.id = :id " +
             "order by rgbu.rating desc")
-    List<UserGameRatingDTO> findUserGameRatingList(Integer id);
+    List<UserGameRatingProjection> findUserGameRatingList(Integer id);
 
     @Query("Select g from Game g " +
             "join UserWish uw on g.id = uw.game.id " +
@@ -36,5 +52,15 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
             "join GameSell gs on g.id = gs.game.id " +
             "join User u on u.id = gs.user.id " +
             "where u.id = :id")
-    List<GameSellDTO> getGameSellList(Integer id);
+    List<GameSellProjection> getGameSellList(Integer id);
+
+    @Query("select g from Game g " +
+            "join Expansion ex on ex.daughterGame.id = g.id " +
+            "where ex.parentGame.id = :parentGameId")
+    List<Game> getExpansions(Integer parentGameId);
+
+    @Query("select g from Game g " +
+            "join SameGame sg on sg.sourceGame.id = g.id " +
+            "where sg.referenceGame.id = :referenceGameId")
+    List<Game> getSimilarGames(Integer referenceGameId);
 }

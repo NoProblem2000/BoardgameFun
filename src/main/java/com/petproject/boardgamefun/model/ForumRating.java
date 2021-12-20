@@ -1,14 +1,10 @@
 package com.petproject.boardgamefun.model;
 
-import org.hibernate.annotations.Type;
-
 import javax.persistence.*;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
 
-@Table(name = "forum_message")
+@Table(name = "forum_rating")
 @Entity
-public class ForumMessage {
+public class ForumRating {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -18,24 +14,19 @@ public class ForumMessage {
     @JoinColumn(name = "forum", nullable = false)
     private Forum forum;
 
-    @Lob
-    @Type(type = "org.hibernate.type.TextType")
-    @Column(name = "comment", nullable = false)
-    private String comment;
-
     @ManyToOne(optional = false)
     @JoinColumn(name = "\"user\"", nullable = false)
     private User user;
 
-    @Column(name = "\"time_message\"", nullable = false)
-    private OffsetDateTime time;
+    @Column(name = "rating", nullable = false)
+    private Double rating;
 
-    public OffsetDateTime getTime() {
-        return time;
+    public Double getRating() {
+        return rating;
     }
 
-    public void setTime(OffsetDateTime time) {
-        this.time = time;
+    public void setRating(Double rating) {
+        this.rating = rating;
     }
 
     public User getUser() {
@@ -44,14 +35,6 @@ public class ForumMessage {
 
     public void setUser(User user) {
         this.user = user;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
     }
 
     public Forum getForum() {

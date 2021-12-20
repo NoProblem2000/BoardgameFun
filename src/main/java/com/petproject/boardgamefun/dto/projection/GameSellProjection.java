@@ -1,8 +1,8 @@
-package com.petproject.boardgamefun.dto;
+package com.petproject.boardgamefun.dto.projection;
 
 import com.petproject.boardgamefun.model.Game;
 
-public interface GameSellDTO {
+public interface GameSellProjection {
     Game getGame();
     String getCondition();
     String getComment();

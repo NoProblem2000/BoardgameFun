@@ -12,7 +12,6 @@ public class Designer {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Lob
     @Column(name = "name")
     private String name;
 

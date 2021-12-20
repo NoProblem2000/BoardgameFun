@@ -1,6 +1,10 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.*;
+import com.petproject.boardgamefun.dto.projection.DiariesWithRatingsProjection;
+import com.petproject.boardgamefun.dto.projection.GameSellProjection;
+import com.petproject.boardgamefun.dto.projection.UserGameRatingProjection;
+import com.petproject.boardgamefun.dto.request.PasswordChangeRequest;
+import com.petproject.boardgamefun.dto.request.UserEditRequest;
 import com.petproject.boardgamefun.model.*;
 import com.petproject.boardgamefun.repository.*;
 import com.petproject.boardgamefun.security.jwt.JwtUtils;
@@ -177,7 +181,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/games-rating")
-    public ResponseEntity<List<UserGameRatingDTO>> getUserRatingList(@PathVariable Integer userId) {
+    public ResponseEntity<List<UserGameRatingProjection>> getUserRatingList(@PathVariable Integer userId) {
 
         var ratingGamesByUser = gameRepository.findUserGameRatingList(userId);
 
@@ -271,7 +275,7 @@ public class UserController {
 
     @Transactional
     @GetMapping("{userId}/games-to-sell")
-    public ResponseEntity<List<GameSellDTO>> getGameSellList(@PathVariable Integer userId){
+    public ResponseEntity<List<GameSellProjection>> getGameSellList(@PathVariable Integer userId){
 
         var gameSellList = gameRepository.getGameSellList(userId);
 
@@ -339,7 +343,7 @@ public class UserController {
 
     @Transactional
     @GetMapping({"{userId}/diary-list"})
-    public ResponseEntity<List<DiariesWithRatingsResponse>> getListDiary(@PathVariable Integer userId){
+    public ResponseEntity<List<DiariesWithRatingsProjection>> getListDiary(@PathVariable Integer userId){
         var diaries = diaryRepository.findUserDiaries(userId);
 
         return new ResponseEntity<>(diaries, HttpStatus.OK);
@@ -362,12 +366,9 @@ public class UserController {
         return new ResponseEntity<>(diary, HttpStatus.OK);
     }
 
-
-
     //todo: optimize response - not whole model, only needed fields
     //todo: add news
-    //todo: diary
-
-    //todo: add game
+    //todo: add rights
+    //todo: unique repository???
 
 }

@@ -1,5 +1,7 @@
 package com.petproject.boardgamefun.model;
 
+import org.hibernate.annotations.Type;
+
 import javax.persistence.*;
 
 @Table(name = "user_ratings")
@@ -11,6 +13,7 @@ public class UserRating {
     private Integer id;
 
     @Lob
+    @Type(type = "org.hibernate.type.TextType")
     @Column(name = "comment")
     private String comment;
 

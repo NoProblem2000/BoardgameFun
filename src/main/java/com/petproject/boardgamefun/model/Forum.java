@@ -1,7 +1,9 @@
 package com.petproject.boardgamefun.model;
 
+import org.hibernate.annotations.Type;
+
 import javax.persistence.*;
-import java.time.OffsetTime;
+import java.time.OffsetDateTime;
 
 @Table(name = "forum")
 @Entity
@@ -12,15 +14,17 @@ public class Forum {
     private Integer id;
 
     @Lob
+    @Type(type = "org.hibernate.type.TextType")
     @Column(name = "title", nullable = false)
     private String title;
 
     @Lob
+    @Type(type = "org.hibernate.type.TextType")
     @Column(name = "text", nullable = false)
     private String text;
 
     @Column(name = "publication_time", nullable = false)
-    private OffsetTime publicationTime;
+    private OffsetDateTime publicationTime;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "game", nullable = false)
@@ -46,11 +50,11 @@ public class Forum {
         this.game = game;
     }
 
-    public OffsetTime getPublicationTime() {
+    public OffsetDateTime getPublicationTime() {
         return publicationTime;
     }
 
-    public void setPublicationTime(OffsetTime publicationTime) {
+    public void setPublicationTime(OffsetDateTime publicationTime) {
         this.publicationTime = publicationTime;
     }
 

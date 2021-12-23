@@ -133,6 +133,8 @@
                     <jsonLibrary>jackson2</jsonLibrary>
                     <classPatterns>
                         <pattern>com.petproject.boardgamefun.model.*</pattern>
+                        <pattern>com.petproject.boardgamefun.dto.*</pattern>
+                        <pattern>com.petproject.boardgamefun.dto.projection.*</pattern>
                     </classPatterns>
                     <outputFile>target/rest.d.ts</outputFile>
                     <outputKind>module</outputKind>

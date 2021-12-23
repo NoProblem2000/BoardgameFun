@@ -12,7 +12,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/designer")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class DesignerController {
 
     private final DesignerRepository designerRepository;

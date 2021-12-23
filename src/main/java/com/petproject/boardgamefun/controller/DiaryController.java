@@ -20,7 +20,6 @@ import java.util.Objects;
 
 
 @RestController
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/diaries")
 public class DiaryController {
     final DiaryCommentRepository diaryCommentRepository;

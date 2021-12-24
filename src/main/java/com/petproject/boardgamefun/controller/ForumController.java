@@ -8,6 +8,7 @@ import com.petproject.boardgamefun.model.Forum;
 import com.petproject.boardgamefun.model.ForumMessage;
 import com.petproject.boardgamefun.model.ForumRating;
 import com.petproject.boardgamefun.repository.*;
+import org.springframework.data.relational.core.sql.In;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,6 +49,14 @@ public class ForumController {
         }
 
         return new ResponseEntity<>(forums, HttpStatus.OK);
+    }
+
+    @Transactional
+    @GetMapping("/{forumId}")
+    public ResponseEntity<ForumProjection> getForum(@PathVariable Integer forumId){
+        var forum = forumRepository.findForumWithRatingUsingId(forumId);
+
+        return new ResponseEntity<>(forum, HttpStatus.OK);
     }
 
     @Transactional

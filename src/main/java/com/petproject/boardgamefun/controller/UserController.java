@@ -1,6 +1,6 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.projection.DiariesWithRatingsProjection;
+import com.petproject.boardgamefun.dto.projection.DiaryWithRatingsProjection;
 import com.petproject.boardgamefun.dto.projection.GameSellProjection;
 import com.petproject.boardgamefun.dto.projection.UserGameRatingProjection;
 import com.petproject.boardgamefun.dto.request.PasswordChangeRequest;
@@ -342,7 +342,7 @@ public class UserController {
 
     @Transactional
     @GetMapping({"{userId}/diary-list"})
-    public ResponseEntity<List<DiariesWithRatingsProjection>> getListDiary(@PathVariable Integer userId){
+    public ResponseEntity<List<DiaryWithRatingsProjection>> getListDiary(@PathVariable Integer userId){
         var diaries = diaryRepository.findUserDiaries(userId);
 
         return new ResponseEntity<>(diaries, HttpStatus.OK);

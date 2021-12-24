@@ -1,6 +1,6 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.projection.DiariesWithRatingsProjection;
+import com.petproject.boardgamefun.dto.projection.DiaryWithRatingsProjection;
 import com.petproject.boardgamefun.dto.request.DiaryCommentRequest;
 import com.petproject.boardgamefun.dto.request.DiaryRatingRequest;
 import com.petproject.boardgamefun.model.DiaryComment;
@@ -36,11 +36,20 @@ public class DiaryController {
 
     @Transactional
     @GetMapping("")
-    public ResponseEntity<List<DiariesWithRatingsProjection>> getDiaries(){
+    public ResponseEntity<List<DiaryWithRatingsProjection>> getDiaries(){
         var diaries = diaryRepository.getAllDiaries();
 
         return new ResponseEntity<>(diaries, HttpStatus.OK);
     }
+
+    @Transactional
+    @GetMapping("/{diaryId}")
+    public ResponseEntity<DiaryWithRatingsProjection> getDiary(@PathVariable Integer diaryId){
+        var diaryProjection = diaryRepository.findDiaryUsingId(diaryId);
+
+        return new ResponseEntity<>(diaryProjection, HttpStatus.OK);
+    }
+
 
     @Transactional
     @GetMapping("/{diaryId}/comments")

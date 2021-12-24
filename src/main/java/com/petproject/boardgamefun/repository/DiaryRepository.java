@@ -11,7 +11,7 @@ public interface DiaryRepository extends JpaRepository<Diary, Integer> {
     Diary findDiary_ByUserIdAndId(Integer userId, Integer id);
 
     @Query("select d as diary, avg(dr.rating) as rating from Diary d " +
-            "join DiaryRating dr on d.id = dr.diary.id " +
+            "left join DiaryRating dr on d.id = dr.diary.id " +
             "join User u on u.id = d.user.id " +
             "where u.id = :userId " +
             "group by d")
@@ -20,7 +20,7 @@ public interface DiaryRepository extends JpaRepository<Diary, Integer> {
     Diary findDiaryById(Integer id);
 
     @Query("select d as diary, avg(dr.rating) as rating from Diary d " +
-            "join DiaryRating dr on d.id = dr.diary.id" +
+            "left join DiaryRating dr on d.id = dr.diary.id" +
             " group by d")
     List<DiariesWithRatingsProjection> getAllDiaries();
 }

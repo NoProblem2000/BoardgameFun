@@ -79,7 +79,7 @@ public class UserController {
         String jwt = jwtUtils.generateJwtToken(authentication);
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        return new ResponseEntity<>(new JwtResponse(jwt, userDetails.getUsername(), userDetails.getEmail()), HttpStatus.OK);
+        return new ResponseEntity<>(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), userDetails.getEmail()), HttpStatus.OK);
     }
 
     @PostMapping("/sign-up")

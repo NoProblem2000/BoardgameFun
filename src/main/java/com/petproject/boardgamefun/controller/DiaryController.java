@@ -1,6 +1,6 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.projection.DiaryWithRatingsProjection;
+import com.petproject.boardgamefun.dto.DiaryDTO;
 import com.petproject.boardgamefun.dto.request.DiaryCommentRequest;
 import com.petproject.boardgamefun.dto.request.DiaryRatingRequest;
 import com.petproject.boardgamefun.model.DiaryComment;
@@ -9,6 +9,7 @@ import com.petproject.boardgamefun.repository.DiaryCommentRepository;
 import com.petproject.boardgamefun.repository.DiaryRatingRepository;
 import com.petproject.boardgamefun.repository.DiaryRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
+import com.petproject.boardgamefun.service.DiaryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,26 +27,28 @@ public class DiaryController {
     final UserRepository userRepository;
     final DiaryRepository diaryRepository;
     final DiaryRatingRepository diaryRatingRepository;
+    final DiaryService diaryService;
 
-    public DiaryController(DiaryCommentRepository diaryCommentRepository, UserRepository userRepository, DiaryRepository diaryRepository, DiaryRatingRepository diaryRatingRepository) {
+    public DiaryController(DiaryCommentRepository diaryCommentRepository, UserRepository userRepository, DiaryRepository diaryRepository, DiaryRatingRepository diaryRatingRepository, DiaryService diaryService) {
         this.diaryCommentRepository = diaryCommentRepository;
         this.userRepository = userRepository;
         this.diaryRepository = diaryRepository;
         this.diaryRatingRepository = diaryRatingRepository;
+        this.diaryService = diaryService;
     }
 
     @Transactional
     @GetMapping("")
-    public ResponseEntity<List<DiaryWithRatingsProjection>> getDiaries(){
-        var diaries = diaryRepository.getAllDiaries();
+    public ResponseEntity<List<DiaryDTO>> getDiaries(){
+        var diaries = diaryService.projectionsToDiaryDTO(diaryRepository.getAllDiaries());
 
         return new ResponseEntity<>(diaries, HttpStatus.OK);
     }
 
     @Transactional
     @GetMapping("/{diaryId}")
-    public ResponseEntity<DiaryWithRatingsProjection> getDiary(@PathVariable Integer diaryId){
-        var diaryProjection = diaryRepository.findDiaryUsingId(diaryId);
+    public ResponseEntity<DiaryDTO> getDiary(@PathVariable Integer diaryId){
+        var diaryProjection = diaryService.projectionToDiaryDTO(diaryRepository.findDiaryUsingId(diaryId));
 
         return new ResponseEntity<>(diaryProjection, HttpStatus.OK);
     }

@@ -1,6 +1,6 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.projection.ForumProjection;
+import com.petproject.boardgamefun.dto.ForumDTO;
 import com.petproject.boardgamefun.dto.request.ForumMessageRequest;
 import com.petproject.boardgamefun.dto.request.ForumRatingRequest;
 import com.petproject.boardgamefun.dto.request.ForumRequest;
@@ -8,7 +8,7 @@ import com.petproject.boardgamefun.model.Forum;
 import com.petproject.boardgamefun.model.ForumMessage;
 import com.petproject.boardgamefun.model.ForumRating;
 import com.petproject.boardgamefun.repository.*;
-import org.springframework.data.relational.core.sql.In;
+import com.petproject.boardgamefun.service.ForumService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,25 +27,27 @@ public class ForumController {
     private final UserRepository userRepository;
     private final ForumMessageRepository forumMessageRepository;
     private final ForumRatingRepository forumRatingRepository;
+    private final ForumService forumService;
 
-    public ForumController(ForumRepository forumRepository, GameRepository gameRepository, UserRepository userRepository, ForumMessageRepository forumMessageRepository, ForumRatingRepository forumRatingRepository) {
+    public ForumController(ForumRepository forumRepository, GameRepository gameRepository, UserRepository userRepository, ForumMessageRepository forumMessageRepository, ForumRatingRepository forumRatingRepository, ForumService forumService) {
         this.forumRepository = forumRepository;
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.forumMessageRepository = forumMessageRepository;
         this.forumRatingRepository = forumRatingRepository;
+        this.forumService = forumService;
     }
 
     @Transactional
     @GetMapping("")
-    public ResponseEntity<List<ForumProjection>> getForums(@RequestParam(required = false) Integer gameId, @RequestParam(required = false) Integer userId) {
-        List<ForumProjection> forums;
+    public ResponseEntity<List<ForumDTO>> getForums(@RequestParam(required = false) Integer gameId, @RequestParam(required = false) Integer userId) {
+        List<ForumDTO> forums;
         if (gameId != null) {
-            forums = forumRepository.findForumsGameWithRating(gameId);
+            forums = forumService.projectionsToForumDTO(forumRepository.findForumsGameWithRating(gameId));
         } else if (userId != null) {
-            forums = forumRepository.findForumsUserWithRating(userId);
+            forums = forumService.projectionsToForumDTO(forumRepository.findForumsUserWithRating(userId));
         } else {
-            forums = forumRepository.findForumsWithRating();
+            forums = forumService.projectionsToForumDTO(forumRepository.findForumsWithRating());
         }
 
         return new ResponseEntity<>(forums, HttpStatus.OK);
@@ -53,8 +55,8 @@ public class ForumController {
 
     @Transactional
     @GetMapping("/{forumId}")
-    public ResponseEntity<ForumProjection> getForum(@PathVariable Integer forumId){
-        var forum = forumRepository.findForumWithRatingUsingId(forumId);
+    public ResponseEntity<ForumDTO> getForum(@PathVariable Integer forumId){
+        var forum = forumService.projectionToForumDTO(forumRepository.findForumWithRatingUsingId(forumId));
 
         return new ResponseEntity<>(forum, HttpStatus.OK);
     }

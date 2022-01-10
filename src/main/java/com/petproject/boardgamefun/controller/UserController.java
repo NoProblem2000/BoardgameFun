@@ -327,7 +327,7 @@ public class UserController {
 
     @Transactional
     @PostMapping("{userId}/add-diary")
-    public ResponseEntity<Diary> addDiary(@PathVariable Integer userId, @RequestBody Diary diary){
+    public ResponseEntity<DiaryDTO> addDiary(@PathVariable Integer userId, @RequestBody Diary diary){
 
         var user = userRepository.findUserById(userId);
         diary.setUser(user);
@@ -340,7 +340,9 @@ public class UserController {
 
         diaryRepository.save(diary);
 
-        return new ResponseEntity<>(diary, HttpStatus.OK);
+        var diaryDTO = diaryService.entityToDiaryDTO(diary);
+
+        return new ResponseEntity<>(diaryDTO, HttpStatus.OK);
     }
 
     @Transactional
@@ -364,7 +366,7 @@ public class UserController {
 
     @Transactional
     @PutMapping({"{userId}/update-diary/{diaryId}"})
-    public ResponseEntity<Diary> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest){
+    public ResponseEntity<DiaryDTO> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest){
 
         var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
         if (diaryRequest.getTitle() != null && !Objects.equals(diary.getTitle(), diaryRequest.getTitle())){
@@ -376,7 +378,9 @@ public class UserController {
 
         diaryRepository.save(diary);
 
-        return new ResponseEntity<>(diary, HttpStatus.OK);
+        var diaryDTO = diaryService.entityToDiaryDTO(diary);
+
+        return new ResponseEntity<>(diaryDTO, HttpStatus.OK);
     }
 
     //todo: optimize response - not whole model, only needed fields

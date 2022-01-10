@@ -1,5 +1,6 @@
 package com.petproject.boardgamefun.controller;
 
+import com.petproject.boardgamefun.dto.DiaryCommentDTO;
 import com.petproject.boardgamefun.dto.DiaryDTO;
 import com.petproject.boardgamefun.dto.request.DiaryCommentRequest;
 import com.petproject.boardgamefun.dto.request.DiaryRatingRequest;
@@ -9,6 +10,7 @@ import com.petproject.boardgamefun.repository.DiaryCommentRepository;
 import com.petproject.boardgamefun.repository.DiaryRatingRepository;
 import com.petproject.boardgamefun.repository.DiaryRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
+import com.petproject.boardgamefun.service.DiaryCommentService;
 import com.petproject.boardgamefun.service.DiaryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,13 +30,15 @@ public class DiaryController {
     final DiaryRepository diaryRepository;
     final DiaryRatingRepository diaryRatingRepository;
     final DiaryService diaryService;
+    final DiaryCommentService diaryCommentService;
 
-    public DiaryController(DiaryCommentRepository diaryCommentRepository, UserRepository userRepository, DiaryRepository diaryRepository, DiaryRatingRepository diaryRatingRepository, DiaryService diaryService) {
+    public DiaryController(DiaryCommentRepository diaryCommentRepository, UserRepository userRepository, DiaryRepository diaryRepository, DiaryRatingRepository diaryRatingRepository, DiaryService diaryService, DiaryCommentService diaryCommentService) {
         this.diaryCommentRepository = diaryCommentRepository;
         this.userRepository = userRepository;
         this.diaryRepository = diaryRepository;
         this.diaryRatingRepository = diaryRatingRepository;
         this.diaryService = diaryService;
+        this.diaryCommentService = diaryCommentService;
     }
 
     @Transactional
@@ -56,15 +60,15 @@ public class DiaryController {
 
     @Transactional
     @GetMapping("/{diaryId}/comments")
-    public ResponseEntity<List<DiaryComment>> getDiaryComments(@PathVariable Integer diaryId){
-        var diaryComments = diaryCommentRepository.findDiaryComment_ByDiaryId(diaryId);
+    public ResponseEntity<List<DiaryCommentDTO>> getDiaryComments(@PathVariable Integer diaryId){
+        var diaryComments = diaryCommentService.entitiesToCommentDTO(diaryCommentRepository.findDiaryComment_ByDiaryId(diaryId));
 
         return new ResponseEntity<>(diaryComments, HttpStatus.OK);
     }
 
     @Transactional
     @PostMapping(value = "{diaryId}/add-comment/{userId}")
-    public ResponseEntity<List<DiaryComment>> addComment(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody DiaryCommentRequest diaryCommentRequest){
+    public ResponseEntity<List<DiaryCommentDTO>> addComment(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody DiaryCommentRequest diaryCommentRequest){
 
         var user = userRepository.findUserById(userId);
         var diary = diaryRepository.findDiaryById(diaryId);
@@ -76,32 +80,32 @@ public class DiaryController {
         diaryComment.setComment(diaryCommentRequest.getComment());
         diaryCommentRepository.save(diaryComment);
 
-        var diaryComments = diaryCommentRepository.findDiaryComment_ByDiaryId(diaryId);
+        var diaryComments = diaryCommentService.entitiesToCommentDTO(diaryCommentRepository.findDiaryComment_ByDiaryId(diaryId));
 
         return new ResponseEntity<>(diaryComments, HttpStatus.OK);
     }
 
     @Transactional
     @PatchMapping(value = "{diaryId}/update-comment/{diaryCommentId}")
-    public ResponseEntity<List<DiaryComment>> updateComment(@PathVariable Integer diaryId, @PathVariable Integer diaryCommentId, @RequestBody DiaryCommentRequest diaryCommentRequest){
+    public ResponseEntity<List<DiaryCommentDTO>> updateComment(@PathVariable Integer diaryId, @PathVariable Integer diaryCommentId, @RequestBody DiaryCommentRequest diaryCommentRequest){
         var diaryComment = diaryCommentRepository.findDiaryCommentById(diaryCommentId);
         if (diaryCommentRequest != null && !diaryCommentRequest.getComment().equals(diaryComment.getComment())) {
             diaryComment.setComment(diaryCommentRequest.getComment());
             diaryCommentRepository.save(diaryComment);
         }
 
-        var diaryComments = diaryCommentRepository.findDiaryComment_ByDiaryId(diaryId);
+        var diaryComments = diaryCommentService.entitiesToCommentDTO(diaryCommentRepository.findDiaryComment_ByDiaryId(diaryId));
 
         return new ResponseEntity<>(diaryComments, HttpStatus.OK);
     }
 
     @Transactional
     @DeleteMapping("{diaryId}/delete-comment/{diaryCommentId}")
-    public ResponseEntity<List<DiaryComment>> deleteComment(@PathVariable Integer diaryId, @PathVariable Integer diaryCommentId){
+    public ResponseEntity<List<DiaryCommentDTO>> deleteComment(@PathVariable Integer diaryId, @PathVariable Integer diaryCommentId){
 
         var diaryComment = diaryCommentRepository.findDiaryCommentById(diaryCommentId);
         diaryCommentRepository.delete(diaryComment);
-        var diaryComments = diaryCommentRepository.findDiaryComment_ByDiaryId(diaryId);
+        var diaryComments = diaryCommentService.entitiesToCommentDTO(diaryCommentRepository.findDiaryComment_ByDiaryId(diaryId));
 
         return new ResponseEntity<>(diaryComments, HttpStatus.OK);
     }

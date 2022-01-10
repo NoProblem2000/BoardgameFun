@@ -2,6 +2,7 @@ package com.petproject.boardgamefun.service;
 
 import com.petproject.boardgamefun.dto.ForumDTO;
 import com.petproject.boardgamefun.dto.projection.ForumProjection;
+import com.petproject.boardgamefun.model.Forum;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,5 +23,18 @@ public class ForumService {
         forum.setForum(projection.getForum());
         forum.setRating(projection.getRating());
         return forum;
+    }
+    
+    public List<ForumDTO> entitiesToForumDTO(List<Forum> forums){
+        ArrayList<ForumDTO> forumsDTO = new ArrayList<>();
+        for (var forum :
+                forums) {
+            forumsDTO.add(new ForumDTO(forum, null));
+        }
+        return forumsDTO;
+    }
+    
+    public ForumDTO entityToForumDTO(Forum forum){
+        return new ForumDTO(forum, null);
     }
 }

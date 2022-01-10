@@ -63,7 +63,7 @@ public class ForumController {
 
     @Transactional
     @PostMapping("add-forum/{gameId}/{userId}")
-    public ResponseEntity<Forum> addForum(@PathVariable Integer gameId, @PathVariable Integer userId, @RequestBody ForumRequest forumRequest) {
+    public ResponseEntity<ForumDTO> addForum(@PathVariable Integer gameId, @PathVariable Integer userId, @RequestBody ForumRequest forumRequest) {
 
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
@@ -77,12 +77,14 @@ public class ForumController {
 
         forumRepository.save(forum);
 
-        return new ResponseEntity<>(forum, HttpStatus.OK);
+        var forumDTO = forumService.entityToForumDTO(forum);
+
+        return new ResponseEntity<>(forumDTO, HttpStatus.OK);
     }
 
     @Transactional
     @PatchMapping("/update-forum/{forumId}")
-    public ResponseEntity<Forum> updateForum(@PathVariable Integer forumId, @RequestBody ForumRequest forumRequest) {
+    public ResponseEntity<ForumDTO> updateForum(@PathVariable Integer forumId, @RequestBody ForumRequest forumRequest) {
         var forum = forumRepository.findForumById(forumId);
 
         if (forumRequest.getTitle() != null && !Objects.equals(forumRequest.getTitle(), forum.getTitle()))
@@ -93,7 +95,9 @@ public class ForumController {
 
         forumRepository.save(forum);
 
-        return new ResponseEntity<>(forum, HttpStatus.OK);
+        var forumDTO = forumService.entityToForumDTO(forum);
+
+        return new ResponseEntity<>(forumDTO, HttpStatus.OK);
     }
 
     @Transactional
@@ -167,7 +171,7 @@ public class ForumController {
 
     @Transactional
     @PostMapping("/{forumId}/set-rating/{userId}")
-    public ResponseEntity<Forum> setForumRating(@PathVariable Integer forumId, @PathVariable Integer userId, @RequestBody ForumRatingRequest forumRatingRequest){
+    public ResponseEntity<ForumDTO> setForumRating(@PathVariable Integer forumId, @PathVariable Integer userId, @RequestBody ForumRatingRequest forumRatingRequest){
 
         var forumRating =  forumRatingRepository.findForumRating_ByForumIdAndUserId(forumId, userId);
         if (forumRating == null){
@@ -181,17 +185,17 @@ public class ForumController {
         forumRating.setRating(forumRatingRequest.getRating());
 
         forumRatingRepository.save(forumRating);
-        var forum = forumRepository.findForumById(forumId);
+        var forum = forumService.projectionToForumDTO(forumRepository.findForumWithRatingUsingId(userId));
         return new ResponseEntity<>(forum, HttpStatus.OK);
     }
 
     @Transactional
     @DeleteMapping("/{forumId}/remove-rating/{ratingId}")
-    public ResponseEntity<Forum> removeRatingFromForum(@PathVariable Integer forumId, @PathVariable Integer ratingId){
+    public ResponseEntity<ForumDTO> removeRatingFromForum(@PathVariable Integer forumId, @PathVariable Integer ratingId){
         var forumRating = forumRatingRepository.findForumRatingById(ratingId);
         forumRatingRepository.delete(forumRating);
 
-        var forum = forumRepository.findForumById(forumId);
+        var forum = forumService.projectionToForumDTO(forumRepository.findForumWithRatingUsingId(forumId));
 
         return new ResponseEntity<>(forum, HttpStatus.OK);
     }

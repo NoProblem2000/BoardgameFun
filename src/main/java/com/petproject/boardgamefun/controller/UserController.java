@@ -272,7 +272,7 @@ public class UserController {
 
     @Transactional
     @PostMapping("{userId}/add-game-to-sell/{gameId}")
-    public ResponseEntity<GameSell> addGameToSellList(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody GameSell gameSell){
+    public ResponseEntity<List<GameSellDTO>> addGameToSellList(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody GameSell gameSell){
 
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
@@ -281,8 +281,9 @@ public class UserController {
         gameSell.setUser(user);
 
         gameSellRepository.save(gameSell);
+        var gameSellList = gameSellService.projectionsToGameSellDTO(gameRepository.getGameSellList(userId));
 
-        return new ResponseEntity<>(gameSell, HttpStatus.OK);
+        return new ResponseEntity<>(gameSellList, HttpStatus.OK);
     }
 
     @Transactional

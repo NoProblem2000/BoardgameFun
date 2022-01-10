@@ -3,6 +3,7 @@ package com.petproject.boardgamefun.controller;
 import com.petproject.boardgamefun.dto.DiaryDTO;
 import com.petproject.boardgamefun.dto.GameDTO;
 import com.petproject.boardgamefun.dto.GameSellDTO;
+import com.petproject.boardgamefun.dto.UserDTO;
 import com.petproject.boardgamefun.dto.request.PasswordChangeRequest;
 import com.petproject.boardgamefun.dto.request.UserEditRequest;
 import com.petproject.boardgamefun.model.*;
@@ -14,6 +15,7 @@ import com.petproject.boardgamefun.security.services.UserDetailsImpl;
 import com.petproject.boardgamefun.service.DiaryService;
 import com.petproject.boardgamefun.service.GameSellService;
 import com.petproject.boardgamefun.service.GameService;
+import com.petproject.boardgamefun.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -43,6 +45,7 @@ public class UserController {
     final DiaryService diaryService;
     final GameSellService gameSellService;
     final GameService gameService;
+    final UserService userService;
 
     final PasswordEncoder passwordEncoder;
     final JwtUtils jwtUtils;
@@ -53,7 +56,7 @@ public class UserController {
                           UserOwnGameRepository userOwnGameRepository,
                           RatingGameByUserRepository ratingGameByUserRepository,
                           UserWishRepository userWishRepository,
-                          GameSellRepository gameSellRepository, DiaryRepository diaryRepository, DiaryService diaryService, GameSellService gameSellService, GameService gameService, PasswordEncoder passwordEncoder,
+                          GameSellRepository gameSellRepository, DiaryRepository diaryRepository, DiaryService diaryService, GameSellService gameSellService, GameService gameService, UserService userService, PasswordEncoder passwordEncoder,
                           JwtUtils jwtUtils,
                           AuthenticationManager authenticationManager) {
         this.gameRepository = gameRepository;
@@ -66,14 +69,15 @@ public class UserController {
         this.diaryService = diaryService;
         this.gameSellService = gameSellService;
         this.gameService = gameService;
+        this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.authenticationManager = authenticationManager;
     }
 
     @GetMapping()
-    public ResponseEntity<List<User>> getUsers() {
-        var users = userRepository.findAll();
+    public ResponseEntity<List<UserDTO>> getUsers() {
+        var users = userService.entitiesToUserDTO(userRepository.findAll());
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
@@ -148,8 +152,8 @@ public class UserController {
 
     @Transactional
     @GetMapping("{id}")
-    public ResponseEntity<User> getUser(@PathVariable Integer id) {
-        var user = userRepository.findUserById(id);
+    public ResponseEntity<UserDTO> getUser(@PathVariable Integer id) {
+        var user = userService.entityToUserDTO(userRepository.findUserById(id));
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 

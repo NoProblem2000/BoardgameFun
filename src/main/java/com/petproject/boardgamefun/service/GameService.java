@@ -3,6 +3,7 @@ package com.petproject.boardgamefun.service;
 import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
 import com.petproject.boardgamefun.dto.projection.*;
 import com.petproject.boardgamefun.dto.GameDTO;
+import com.petproject.boardgamefun.model.Game;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,6 +16,15 @@ public class GameService {
         return new GameDTO(gameProjection.getGame(),
                 gameProjection.getRating(),
                 designersProjection.stream().map(DesignersProjection::getDesigner).collect(Collectors.toList()));
+    }
+
+    public List<GameDTO> entitiesToGameDTO(List<Game> games) {
+        ArrayList<GameDTO> gamesDTO = new ArrayList<>();
+        for (var game :
+                games) {
+            gamesDTO.add(new GameDTO(game, null, null));
+        }
+        return gamesDTO;
     }
 
     public List<String> getTitlesFromProjections(List<GamesFilterByTitleProjection> games) {

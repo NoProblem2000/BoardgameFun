@@ -235,8 +235,8 @@ public class UserController {
     }
 
     @GetMapping("/{id}/wishlist")
-    public ResponseEntity<List<Game>> getUserWishlist(@PathVariable Integer id) {
-        var games = gameRepository.findUserWishlist(id);
+    public ResponseEntity<List<GameDTO>> getUserWishlist(@PathVariable Integer id) {
+        var games = gameService.entitiesToGameDTO(gameRepository.findUserWishlist(id));
         return new ResponseEntity<>(games, HttpStatus.OK);
     }
 

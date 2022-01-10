@@ -2,6 +2,7 @@ package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.DiaryCommentDTO;
 import com.petproject.boardgamefun.dto.DiaryDTO;
+import com.petproject.boardgamefun.dto.DiaryRatingDTO;
 import com.petproject.boardgamefun.dto.request.DiaryCommentRequest;
 import com.petproject.boardgamefun.dto.request.DiaryRatingRequest;
 import com.petproject.boardgamefun.model.DiaryComment;
@@ -11,6 +12,7 @@ import com.petproject.boardgamefun.repository.DiaryRatingRepository;
 import com.petproject.boardgamefun.repository.DiaryRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
 import com.petproject.boardgamefun.service.DiaryCommentService;
+import com.petproject.boardgamefun.service.DiaryRatingService;
 import com.petproject.boardgamefun.service.DiaryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,19 +33,21 @@ public class DiaryController {
     final DiaryRatingRepository diaryRatingRepository;
     final DiaryService diaryService;
     final DiaryCommentService diaryCommentService;
+    final DiaryRatingService diaryRatingService;
 
-    public DiaryController(DiaryCommentRepository diaryCommentRepository, UserRepository userRepository, DiaryRepository diaryRepository, DiaryRatingRepository diaryRatingRepository, DiaryService diaryService, DiaryCommentService diaryCommentService) {
+    public DiaryController(DiaryCommentRepository diaryCommentRepository, UserRepository userRepository, DiaryRepository diaryRepository, DiaryRatingRepository diaryRatingRepository, DiaryService diaryService, DiaryCommentService diaryCommentService, DiaryRatingService diaryRatingService) {
         this.diaryCommentRepository = diaryCommentRepository;
         this.userRepository = userRepository;
         this.diaryRepository = diaryRepository;
         this.diaryRatingRepository = diaryRatingRepository;
         this.diaryService = diaryService;
         this.diaryCommentService = diaryCommentService;
+        this.diaryRatingService = diaryRatingService;
     }
 
     @Transactional
     @GetMapping("")
-    public ResponseEntity<List<DiaryDTO>> getDiaries(){
+    public ResponseEntity<List<DiaryDTO>> getDiaries() {
         var diaries = diaryService.projectionsToDiaryDTO(diaryRepository.getAllDiaries());
 
         return new ResponseEntity<>(diaries, HttpStatus.OK);
@@ -51,7 +55,7 @@ public class DiaryController {
 
     @Transactional
     @GetMapping("/{diaryId}")
-    public ResponseEntity<DiaryDTO> getDiary(@PathVariable Integer diaryId){
+    public ResponseEntity<DiaryDTO> getDiary(@PathVariable Integer diaryId) {
         var diaryProjection = diaryService.projectionToDiaryDTO(diaryRepository.findDiaryUsingId(diaryId));
 
         return new ResponseEntity<>(diaryProjection, HttpStatus.OK);
@@ -60,7 +64,7 @@ public class DiaryController {
 
     @Transactional
     @GetMapping("/{diaryId}/comments")
-    public ResponseEntity<List<DiaryCommentDTO>> getDiaryComments(@PathVariable Integer diaryId){
+    public ResponseEntity<List<DiaryCommentDTO>> getDiaryComments(@PathVariable Integer diaryId) {
         var diaryComments = diaryCommentService.entitiesToCommentDTO(diaryCommentRepository.findDiaryComment_ByDiaryId(diaryId));
 
         return new ResponseEntity<>(diaryComments, HttpStatus.OK);
@@ -68,7 +72,7 @@ public class DiaryController {
 
     @Transactional
     @PostMapping(value = "{diaryId}/add-comment/{userId}")
-    public ResponseEntity<List<DiaryCommentDTO>> addComment(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody DiaryCommentRequest diaryCommentRequest){
+    public ResponseEntity<List<DiaryCommentDTO>> addComment(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody DiaryCommentRequest diaryCommentRequest) {
 
         var user = userRepository.findUserById(userId);
         var diary = diaryRepository.findDiaryById(diaryId);
@@ -87,7 +91,7 @@ public class DiaryController {
 
     @Transactional
     @PatchMapping(value = "{diaryId}/update-comment/{diaryCommentId}")
-    public ResponseEntity<List<DiaryCommentDTO>> updateComment(@PathVariable Integer diaryId, @PathVariable Integer diaryCommentId, @RequestBody DiaryCommentRequest diaryCommentRequest){
+    public ResponseEntity<List<DiaryCommentDTO>> updateComment(@PathVariable Integer diaryId, @PathVariable Integer diaryCommentId, @RequestBody DiaryCommentRequest diaryCommentRequest) {
         var diaryComment = diaryCommentRepository.findDiaryCommentById(diaryCommentId);
         if (diaryCommentRequest != null && !diaryCommentRequest.getComment().equals(diaryComment.getComment())) {
             diaryComment.setComment(diaryCommentRequest.getComment());
@@ -101,7 +105,7 @@ public class DiaryController {
 
     @Transactional
     @DeleteMapping("{diaryId}/delete-comment/{diaryCommentId}")
-    public ResponseEntity<List<DiaryCommentDTO>> deleteComment(@PathVariable Integer diaryId, @PathVariable Integer diaryCommentId){
+    public ResponseEntity<List<DiaryCommentDTO>> deleteComment(@PathVariable Integer diaryId, @PathVariable Integer diaryCommentId) {
 
         var diaryComment = diaryCommentRepository.findDiaryCommentById(diaryCommentId);
         diaryCommentRepository.delete(diaryComment);
@@ -112,7 +116,7 @@ public class DiaryController {
 
     @Transactional
     @PostMapping("/{diaryId}/set-rating/{userId}")
-    public ResponseEntity<DiaryRating> setDiaryRating(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody DiaryRatingRequest ratingRequest){
+    public ResponseEntity<DiaryRatingDTO> setDiaryRating(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody DiaryRatingRequest ratingRequest) {
         var diary = diaryRepository.findDiaryById(diaryId);
         var user = userRepository.findUserById(userId);
 
@@ -122,26 +126,29 @@ public class DiaryController {
         diaryRating.setRating(ratingRequest.getRating());
         diaryRatingRepository.save(diaryRating);
 
-        return new ResponseEntity<>(diaryRating, HttpStatus.OK);
+        var diaryRatingDTO = diaryRatingService.entityToDiaryRatingDTO(diaryRating);
+
+        return new ResponseEntity<>(diaryRatingDTO, HttpStatus.OK);
     }
 
     @Transactional
     @PatchMapping("/update-rating/{ratingId}")
-    public ResponseEntity<DiaryRating> updateDiaryRating(@PathVariable Integer ratingId, @RequestBody DiaryRatingRequest ratingRequest){
+    public ResponseEntity<DiaryRatingDTO> updateDiaryRating(@PathVariable Integer ratingId, @RequestBody DiaryRatingRequest ratingRequest) {
         var diaryRating = diaryRatingRepository.findDiaryRatingById(ratingId);
 
-        if (ratingRequest != null && !Objects.equals(diaryRating.getRating(), ratingRequest.getRating())){
+        if (ratingRequest != null && !Objects.equals(diaryRating.getRating(), ratingRequest.getRating())) {
             diaryRating.setRating(ratingRequest.getRating());
         }
 
         diaryRatingRepository.save(diaryRating);
+        var diaryRatingDTO = diaryRatingService.entityToDiaryRatingDTO(diaryRating);
 
-        return new ResponseEntity<>(diaryRating, HttpStatus.OK);
+        return new ResponseEntity<>(diaryRatingDTO, HttpStatus.OK);
     }
 
     @Transactional
     @DeleteMapping("/delete-rating/{ratingId}")
-    public ResponseEntity<String> deleteDiaryRating(@PathVariable Integer ratingId){
+    public ResponseEntity<String> deleteDiaryRating(@PathVariable Integer ratingId) {
         var diaryRating = diaryRatingRepository.findDiaryRatingById(ratingId);
         diaryRatingRepository.delete(diaryRating);
         return new ResponseEntity<>("Рейтинг убран с игры", HttpStatus.OK);

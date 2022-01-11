@@ -13,7 +13,7 @@ public class DiaryService {
     public List<DiaryDTO> projectionsToDiaryDTO(List<DiaryWithRatingsProjection> projections) {
         List<DiaryDTO> diaries = new ArrayList<>();
         for (var projection : projections) {
-            diaries.add(new DiaryDTO(projection.getDiary(), projection.getRating()));
+            diaries.add(new DiaryDTO(projection.getDiary(), projection.getRating() != null ? projection.getRating() : 0 ));
         }
 
         return diaries;

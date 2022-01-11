@@ -159,9 +159,9 @@ public class UserController {
 
     @Transactional
     @GetMapping("/{id}/games")
-    public ResponseEntity<List<Game>> getUserCollectionByType(@PathVariable Integer id) {
+    public ResponseEntity<List<GameDTO>> getUserCollection(@PathVariable Integer id) {
 
-        var games = gameRepository.findUserGames(id);
+        var games = gameService.entitiesToGameDTO(gameRepository.findUserGames(id));
         return new ResponseEntity<>(games, HttpStatus.OK);
     }
 

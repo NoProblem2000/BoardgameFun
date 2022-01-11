@@ -18,6 +18,20 @@ public class GameService {
                 designersProjection.stream().map(DesignersProjection::getDesigner).collect(Collectors.toList()));
     }
 
+    public GameDTO projectionToGameDTO(GameProjection gameProjection) {
+        return new GameDTO(gameProjection.getGame(), null, null);
+    }
+
+    public List<GameDTO> projectionsToGameDTO(List<GameProjection> gameProjections) {
+        List<GameDTO> games = new ArrayList<>();
+        for (var game :
+                gameProjections) {
+            games.add(new GameDTO(game.getGame(), game.getRating(), null));
+        }
+        return games;
+    }
+
+
     public List<GameDTO> entitiesToGameDTO(List<Game> games) {
         ArrayList<GameDTO> gamesDTO = new ArrayList<>();
         for (var game :
@@ -25,6 +39,10 @@ public class GameService {
             gamesDTO.add(new GameDTO(game, null, null));
         }
         return gamesDTO;
+    }
+
+    public GameDTO entityToGameDTO(Game game){
+        return new GameDTO(game, null, null);
     }
 
     public List<String> getTitlesFromProjections(List<GamesFilterByTitleProjection> games) {

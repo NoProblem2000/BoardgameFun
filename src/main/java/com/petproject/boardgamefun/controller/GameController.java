@@ -40,9 +40,9 @@ public class GameController {
 
     @Transactional
     @GetMapping()
-    ResponseEntity<List<GameProjection>> getGames() {
+    ResponseEntity<List<GameDTO>> getGames() {
 
-        var games = gameRepository.findGames();
+        var games = gameService.projectionsToGameDTO(gameRepository.findGames());
 
         return new ResponseEntity<>(games, HttpStatus.OK);
     }
@@ -64,18 +64,19 @@ public class GameController {
 
     @Transactional
     @PostMapping("/add")
-    public ResponseEntity<Game> addGame(@RequestBody Game newGame) {
+    public ResponseEntity<GameDTO> addGame(@RequestBody Game newGame) {
         gameRepository.save(newGame);
+        var game = gameService.entityToGameDTO(newGame);
 
-        return new ResponseEntity<>(newGame, HttpStatus.OK);
+        return new ResponseEntity<>(game, HttpStatus.OK);
     }
 
     @Transactional
     @PutMapping("/update")
-    public ResponseEntity<Game> updateGame(@RequestBody Game updatedGame) {
+    public ResponseEntity<GameDTO> updateGame(@RequestBody Game updatedGame) {
         gameRepository.save(updatedGame);
-
-        return new ResponseEntity<>(updatedGame, HttpStatus.OK);
+        var game = gameService.entityToGameDTO(updatedGame);
+        return new ResponseEntity<>(game, HttpStatus.OK);
     }
 
     @Transactional
@@ -88,15 +89,15 @@ public class GameController {
 
     @Transactional
     @GetMapping("/expansions/{gameId}")
-    public ResponseEntity<List<Game>> getExpansions(@PathVariable Integer gameId) {
-        var gamesExpansions = gameRepository.getExpansions(gameId);
+    public ResponseEntity<List<GameDTO>> getExpansions(@PathVariable Integer gameId) {
+        var gamesExpansions = gameService.entitiesToGameDTO(gameRepository.getExpansions(gameId));
 
         return new ResponseEntity<>(gamesExpansions, HttpStatus.OK);
     }
 
     @Transactional
     @PostMapping("/add-expansion/{parentGameId}/{daughterGameId}")
-    public ResponseEntity<List<Game>> addExpansion(@PathVariable Integer parentGameId, @PathVariable Integer daughterGameId) {
+    public ResponseEntity<List<GameDTO>> addExpansion(@PathVariable Integer parentGameId, @PathVariable Integer daughterGameId) {
         var parentGame = gameRepository.findGameById(parentGameId);
         var daughterGame = gameRepository.findGameById(daughterGameId);
 
@@ -105,33 +106,33 @@ public class GameController {
         expansion.setDaughterGame(daughterGame);
         expansionRepository.save(expansion);
 
-        var gamesExpansions = gameRepository.getExpansions(parentGameId);
+        var gamesExpansions = gameService.entitiesToGameDTO(gameRepository.getExpansions(parentGameId));
 
         return new ResponseEntity<>(gamesExpansions, HttpStatus.OK);
     }
 
     @Transactional
     @DeleteMapping("/delete-expansion/{parentGameId}/{daughterGameId}")
-    public ResponseEntity<List<Game>> deleteExpansion(@PathVariable Integer daughterGameId, @PathVariable Integer parentGameId) {
+    public ResponseEntity<List<GameDTO>> deleteExpansion(@PathVariable Integer daughterGameId, @PathVariable Integer parentGameId) {
         var expansion = expansionRepository.findExpansion_ByDaughterGameIdAndParentGameId(daughterGameId, parentGameId);
         expansionRepository.delete(expansion);
 
-        var gamesExpansions = gameRepository.getExpansions(parentGameId);
+        var gamesExpansions = gameService.entitiesToGameDTO(gameRepository.getExpansions(parentGameId));
 
         return new ResponseEntity<>(gamesExpansions, HttpStatus.OK);
     }
 
     @Transactional
     @GetMapping("/similar/{gameId}")
-    public ResponseEntity<List<Game>> getSimilarGames(@PathVariable Integer gameId) {
-        var similarGames = gameRepository.getSimilarGames(gameId);
+    public ResponseEntity<List<GameDTO>> getSimilarGames(@PathVariable Integer gameId) {
+        var similarGames = gameService.entitiesToGameDTO(gameRepository.getSimilarGames(gameId));
 
         return new ResponseEntity<>(similarGames, HttpStatus.OK);
     }
 
     @Transactional
     @PostMapping("/add-similar/{referenceGameId}/{sourceGameId}")
-    public ResponseEntity<List<Game>> addSimilarGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
+    public ResponseEntity<List<GameDTO>> addSimilarGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
         var referenceGame = gameRepository.findGameById(referenceGameId);
         var sourceGame = gameRepository.findGameById(sourceGameId);
 
@@ -140,18 +141,18 @@ public class GameController {
         sameGame.setSourceGame(sourceGame);
         sameGameRepository.save(sameGame);
 
-        var sameGames = gameRepository.getSimilarGames(referenceGameId);
+        var sameGames = gameService.entitiesToGameDTO(gameRepository.getSimilarGames(referenceGameId));
 
         return new ResponseEntity<>(sameGames, HttpStatus.OK);
     }
 
     @Transactional
     @DeleteMapping("/delete-similar/{referenceGameId}/{sourceGameId}")
-    public ResponseEntity<List<Game>> deleteSameGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
+    public ResponseEntity<List<GameDTO>> deleteSameGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
         var sameGame = sameGameRepository.findSameGame_ByReferenceGameIdAndSourceGameId(referenceGameId, sourceGameId);
         sameGameRepository.delete(sameGame);
 
-        var sameGames = gameRepository.getSimilarGames(referenceGameId);
+        var sameGames = gameService.entitiesToGameDTO(gameRepository.getSimilarGames(referenceGameId));
 
         return new ResponseEntity<>(sameGames, HttpStatus.OK);
     }
@@ -165,14 +166,7 @@ public class GameController {
         return new ResponseEntity<>(ratings, HttpStatus.OK);
     }
 
-    @Transactional
-    @GetMapping("/with-rating")
-    public ResponseEntity<List<GameProjection>> getGamesWithRating() {
-        var games = gameRepository.findGames();
-        return new ResponseEntity<>(games, HttpStatus.OK);
-    }
-
-    //Поменять на тип текст либо убрать аннотацию
+     //Поменять на тип текст либо убрать аннотацию
 
     @Transactional
     @PostMapping("/{gameId}/set-designer/{designerId}")

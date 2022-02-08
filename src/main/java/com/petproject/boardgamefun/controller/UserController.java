@@ -8,6 +8,7 @@ import com.petproject.boardgamefun.dto.request.PasswordChangeRequest;
 import com.petproject.boardgamefun.dto.request.UserEditRequest;
 import com.petproject.boardgamefun.model.*;
 import com.petproject.boardgamefun.repository.*;
+import com.petproject.boardgamefun.security.enums.Role;
 import com.petproject.boardgamefun.security.jwt.JwtUtils;
 import com.petproject.boardgamefun.security.model.JwtResponse;
 import com.petproject.boardgamefun.security.model.LoginRequest;
@@ -24,10 +25,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
+import java.io.IOException;
 import java.time.OffsetDateTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -106,11 +108,22 @@ public class UserController {
             return new ResponseEntity<>("Пользователь с такой почтой уже существует", HttpStatus.BAD_REQUEST);
         }
 
+        user.setRole(Role.ROLE_USER.name());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRegistrationDate(OffsetDateTime.now());
         userRepository.save(user);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
+
+    @Transactional
+    @PostMapping("/upload-avatar/{userName}")
+    public ResponseEntity<String> uploadAvatar(@PathVariable String userName, @RequestParam("avatar") MultipartFile file) throws IOException {
+        var user = userRepository.findUserByName(userName);
+        user.setAvatar(file.getBytes());
+        userRepository.save(user);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+    
 
     @Transactional
     @PatchMapping("/edit/{userId}")
@@ -124,9 +137,6 @@ public class UserController {
         }
         if (userEditRequest.getRole() != null && !Objects.equals(userEditRequest.getRole(), user.getRole())){
             user.setRole(userEditRequest.getRole());
-        }
-        if (userEditRequest.getAvatar() != null && !Arrays.equals(userEditRequest.getAvatar(), user.getAvatar())){
-            user.setAvatar(userEditRequest.getAvatar());
         }
 
         userRepository.save(user);

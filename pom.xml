@@ -17,6 +17,7 @@
         <java.version>17</java.version>
     </properties>
     <!--TODO: add security(roles?)-->
+    <!--TODO: add refresh token-->
     <!--TODO: add logging-->
     <!--TODO: add jpamodelgen-->
     <!--TODO: add actuator-->

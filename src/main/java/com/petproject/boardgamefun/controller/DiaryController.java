@@ -47,8 +47,16 @@ public class DiaryController {
 
     @Transactional
     @GetMapping("")
-    public ResponseEntity<List<DiaryDTO>> getDiaries() {
-        var diaries = diaryService.projectionsToDiaryDTO(diaryRepository.getAllDiaries());
+    public ResponseEntity<List<DiaryDTO>> getDiaries(@RequestParam(required = false) Integer userId, @RequestParam(required = false) Integer gameId) {
+
+        List<DiaryDTO> diaries;
+
+        if (userId != null)
+            diaries = diaryService.projectionsToDiaryDTO(diaryRepository.findUserDiaries(userId));
+        else if(gameId != null)
+            diaries = diaryService.projectionsToDiaryDTO(diaryRepository.findGameDiaries(gameId));
+        else
+            diaries = diaryService.projectionsToDiaryDTO(diaryRepository.getAllDiaries());
 
         return new ResponseEntity<>(diaries, HttpStatus.OK);
     }
@@ -60,7 +68,6 @@ public class DiaryController {
 
         return new ResponseEntity<>(diaryProjection, HttpStatus.OK);
     }
-
 
     @Transactional
     @GetMapping("/{diaryId}/comments")

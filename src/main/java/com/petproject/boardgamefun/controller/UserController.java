@@ -367,14 +367,6 @@ public class UserController {
     }
 
     @Transactional
-    @GetMapping({"{userId}/diary-list"})
-    public ResponseEntity<List<DiaryDTO>> getListDiary(@PathVariable Integer userId){
-        var diaries = diaryService.projectionsToDiaryDTO(diaryRepository.findUserDiaries(userId));
-
-        return new ResponseEntity<>(diaries, HttpStatus.OK);
-    }
-
-    @Transactional
     @PutMapping({"{userId}/update-diary/{diaryId}"})
     public ResponseEntity<DiaryDTO> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest){
 

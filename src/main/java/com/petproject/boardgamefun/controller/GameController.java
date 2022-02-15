@@ -2,7 +2,6 @@ package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.GameDTO;
 import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
-import com.petproject.boardgamefun.dto.projection.GameProjection;
 import com.petproject.boardgamefun.model.Expansion;
 import com.petproject.boardgamefun.model.Game;
 import com.petproject.boardgamefun.model.GameByDesigner;
@@ -13,7 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -69,6 +70,16 @@ public class GameController {
         var game = gameService.entityToGameDTO(newGame);
 
         return new ResponseEntity<>(game, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PostMapping("/upload-image/{gameId}")
+    public ResponseEntity<GameDTO> uploadImage(@PathVariable Integer gameId, @RequestParam("picture") MultipartFile file) throws IOException {
+        var game = gameRepository.findGameById(gameId);
+        game.setPicture(file.getBytes());
+        gameRepository.save(game);
+        var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGame(gameId), designerRepository.findDesignersUsingGame(gameId));
+        return new ResponseEntity<>(gameDTO, HttpStatus.OK);
     }
 
     @Transactional
@@ -166,7 +177,7 @@ public class GameController {
         return new ResponseEntity<>(ratings, HttpStatus.OK);
     }
 
-     //Поменять на тип текст либо убрать аннотацию
+    //Поменять на тип текст либо убрать аннотацию
 
     @Transactional
     @PostMapping("/{gameId}/set-designer/{designerId}")

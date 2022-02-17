@@ -1,5 +1,6 @@
 package com.petproject.boardgamefun.controller;
 
+import com.petproject.boardgamefun.dto.FilterGamesDTO;
 import com.petproject.boardgamefun.dto.GameDTO;
 import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
 import com.petproject.boardgamefun.model.Expansion;
@@ -57,7 +58,7 @@ public class GameController {
 
     @Transactional
     @GetMapping("/get-games-by-filter/{title}")
-    public ResponseEntity<List<String>> getGamesByTitle(@PathVariable String title) {
+    public ResponseEntity<List<FilterGamesDTO>> getGamesByTitle(@PathVariable String title) {
         var games = gameService.getTitlesFromProjections(gameRepository.findGamesUsingTitle(title));
         return new ResponseEntity<>(games, HttpStatus.OK);
     }

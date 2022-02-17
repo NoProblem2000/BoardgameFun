@@ -1,5 +1,6 @@
 package com.petproject.boardgamefun.service;
 
+import com.petproject.boardgamefun.dto.FilterGamesDTO;
 import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
 import com.petproject.boardgamefun.dto.projection.*;
 import com.petproject.boardgamefun.dto.GameDTO;
@@ -45,8 +46,12 @@ public class GameService {
         return new GameDTO(game, null, null);
     }
 
-    public List<String> getTitlesFromProjections(List<GamesFilterByTitleProjection> games) {
-        return games.stream().map(GamesFilterByTitleProjection::getTitle).collect(Collectors.toList());
+    public List<FilterGamesDTO> getTitlesFromProjections(List<GamesFilterByTitleProjection> projections) {
+        ArrayList<FilterGamesDTO> games = new ArrayList<>();
+        for (var projection: projections){
+            games.add(new FilterGamesDTO(projection.getId(), projection.getTitle()));
+        }
+        return games;
     }
 
     public List<GameDTO> userGameRatingToGameDTO(List<UserGameRatingProjection> projections) {

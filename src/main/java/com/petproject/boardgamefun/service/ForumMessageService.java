@@ -10,14 +10,14 @@ import java.util.List;
 @Service
 public class ForumMessageService {
     public ForumMessageDTO entityToForumMessageDTO(ForumMessage forumMessage) {
-        return new ForumMessageDTO(forumMessage.getId(), forumMessage.getComment(), forumMessage.getTime());
+        return new ForumMessageDTO(forumMessage.getId(), forumMessage.getComment(), forumMessage.getTime(), forumMessage.getUser());
     }
 
     public List<ForumMessageDTO> entitiesToForumMessagesDTO(List<ForumMessage> forumMessages) {
         ArrayList<ForumMessageDTO> forumMessagesDTO = new ArrayList<>();
         for (var forumMessage :
                 forumMessages) {
-            forumMessagesDTO.add(new ForumMessageDTO(forumMessage.getId(), forumMessage.getComment(), forumMessage.getTime()));
+            forumMessagesDTO.add(new ForumMessageDTO(forumMessage.getId(), forumMessage.getComment(), forumMessage.getTime(), forumMessage.getUser()));
         }
         return forumMessagesDTO;
     }

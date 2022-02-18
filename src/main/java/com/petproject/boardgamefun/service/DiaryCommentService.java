@@ -11,14 +11,14 @@ import java.util.List;
 public class DiaryCommentService {
 
     public DiaryCommentDTO entityToDiaryCommentDTO(DiaryComment diaryComment) {
-        return new DiaryCommentDTO(diaryComment.getId(), diaryComment.getComment(), diaryComment.getCommentTime());
+        return new DiaryCommentDTO(diaryComment.getId(), diaryComment.getComment(), diaryComment.getCommentTime(), diaryComment.getUser());
     }
 
     public List<DiaryCommentDTO> entitiesToCommentDTO(List<DiaryComment> diaryComments){
         ArrayList<DiaryCommentDTO> diaryCommentsDTO = new ArrayList<>();
         for (var diaryComment :
                 diaryComments) {
-            diaryCommentsDTO.add(new DiaryCommentDTO(diaryComment.getId(), diaryComment.getComment(), diaryComment.getCommentTime()));
+            diaryCommentsDTO.add(new DiaryCommentDTO(diaryComment.getId(), diaryComment.getComment(), diaryComment.getCommentTime(), diaryComment.getUser()));
         }
         return diaryCommentsDTO;
     }

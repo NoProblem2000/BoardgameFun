@@ -336,18 +336,15 @@ public class UserController {
     }
 
     @Transactional
-    @PostMapping("{userId}/add-diary")
-    public ResponseEntity<DiaryDTO> addDiary(@PathVariable Integer userId, @RequestBody Diary diary){
+    @PostMapping("{userId}/add-diary/{gameId}")
+    public ResponseEntity<DiaryDTO> addDiary(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody Diary diary){
 
         var user = userRepository.findUserById(userId);
-        diary.setUser(user);
-        diary.setPublicationTime(OffsetDateTime.now());
-        // todo: в будущем переделать без поиска в репозитории, а сразу получать весь объект, пока нет фронта - заглушка
-        if (diary.getGame() != null){
-            var game = gameRepository.findGameById(diary.getGame().getId());
-            diary.setGame(game);
-        }
+        var game = gameRepository.findGameById(gameId);
 
+        diary.setUser(user);
+        diary.setGame(game);
+        diary.setPublicationTime(OffsetDateTime.now());
         diaryRepository.save(diary);
 
         var diaryDTO = diaryService.entityToDiaryDTO(diary);

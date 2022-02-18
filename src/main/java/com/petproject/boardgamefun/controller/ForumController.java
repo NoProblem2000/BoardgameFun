@@ -116,7 +116,7 @@ public class ForumController {
 
     @Transactional
     @GetMapping("/messages")
-    public ResponseEntity<List<ForumMessageDTO>> getComments(@RequestParam(required = false) Integer forumId, @RequestParam(required = false) Integer userId) {
+    public ResponseEntity<List<ForumMessageDTO>> getMessages(@RequestParam(required = false) Integer forumId, @RequestParam(required = false) Integer userId) {
         List<ForumMessage> messages;
         if (forumId != null)
             messages = forumMessageRepository.findByForumId(forumId);

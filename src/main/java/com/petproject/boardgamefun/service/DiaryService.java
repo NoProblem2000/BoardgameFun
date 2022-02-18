@@ -26,7 +26,7 @@ public class DiaryService {
     public DiaryDTO projectionToDiaryDTO(DiaryWithRatingsProjection projection) {
         DiaryDTO diary = new DiaryDTO();
         diary.setDiary(projection.getDiary());
-        diary.setRating(projection.getRating());
+        diary.setRating(projection.getRating() != null ? projection.getRating() : 0 );
 
         return diary;
     }

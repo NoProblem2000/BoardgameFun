@@ -16,6 +16,7 @@ import com.petproject.boardgamefun.service.DiaryRatingService;
 import com.petproject.boardgamefun.service.DiaryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.transaction.Transactional;
@@ -79,6 +80,7 @@ public class DiaryController {
 
     @Transactional
     @PostMapping(value = "{diaryId}/add-comment/{userId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<DiaryCommentDTO>> addComment(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody DiaryCommentRequest diaryCommentRequest) {
 
         var user = userRepository.findUserById(userId);
@@ -98,6 +100,7 @@ public class DiaryController {
 
     @Transactional
     @PatchMapping(value = "{diaryId}/update-comment/{diaryCommentId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<DiaryCommentDTO>> updateComment(@PathVariable Integer diaryId, @PathVariable Integer diaryCommentId, @RequestBody DiaryCommentRequest diaryCommentRequest) {
         var diaryComment = diaryCommentRepository.findDiaryCommentById(diaryCommentId);
         if (diaryCommentRequest != null && !diaryCommentRequest.getComment().equals(diaryComment.getComment())) {
@@ -112,6 +115,7 @@ public class DiaryController {
 
     @Transactional
     @DeleteMapping("{diaryId}/delete-comment/{diaryCommentId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<DiaryCommentDTO>> deleteComment(@PathVariable Integer diaryId, @PathVariable Integer diaryCommentId) {
 
         var diaryComment = diaryCommentRepository.findDiaryCommentById(diaryCommentId);
@@ -123,6 +127,7 @@ public class DiaryController {
 
     @Transactional
     @PostMapping("/{diaryId}/set-rating/{userId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<DiaryRatingDTO> setDiaryRating(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody DiaryRatingRequest ratingRequest) {
         var diary = diaryRepository.findDiaryById(diaryId);
         var user = userRepository.findUserById(userId);
@@ -140,6 +145,7 @@ public class DiaryController {
 
     @Transactional
     @PatchMapping("/update-rating/{ratingId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<DiaryRatingDTO> updateDiaryRating(@PathVariable Integer ratingId, @RequestBody DiaryRatingRequest ratingRequest) {
         var diaryRating = diaryRatingRepository.findDiaryRatingById(ratingId);
 
@@ -155,6 +161,7 @@ public class DiaryController {
 
     @Transactional
     @DeleteMapping("/delete-rating/{ratingId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> deleteDiaryRating(@PathVariable Integer ratingId) {
         var diaryRating = diaryRatingRepository.findDiaryRatingById(ratingId);
         diaryRatingRepository.delete(diaryRating);

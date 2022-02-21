@@ -19,6 +19,7 @@ import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -127,6 +128,7 @@ public class UserController {
 
     @Transactional
     @PatchMapping("/edit/{userId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<?> editUser(@PathVariable Integer userId, @RequestBody UserEditRequest userEditRequest){
         var user = userRepository.findUserById(userId);
         if (userEditRequest.getName() != null && !userRepository.existsByName(userEditRequest.getName())) {
@@ -146,6 +148,7 @@ public class UserController {
 
     @Transactional
     @PatchMapping("/change-password/{userId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<?> changePassword(@PathVariable Integer userId, @RequestBody PasswordChangeRequest passwordRequest){
         var user = userRepository.findUserById(userId);
         if (passwordRequest.getPassword() != null && passwordEncoder.matches(passwordRequest.getPassword(), user.getPassword())){
@@ -177,6 +180,7 @@ public class UserController {
 
     @Transactional
     @PostMapping("{userId}/add-game/{gameId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<?> addGameToUser(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
         var user = userRepository.findUserById(userId);
@@ -193,6 +197,7 @@ public class UserController {
 
     @Transactional
     @DeleteMapping("{userId}/delete-game/{gameId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<Integer> deleteGameFromUserCollection(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
         var userOwnGame = userOwnGameRepository.findUserOwnGame_ByGameIdAndUserId(gameId, userId);
@@ -212,6 +217,7 @@ public class UserController {
 
     @Transactional
     @DeleteMapping("/{userId}/delete-game-rating/{gameId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> deleteGameRating(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
         var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId);
@@ -223,6 +229,7 @@ public class UserController {
 
     @Transactional
     @PostMapping("/{userId}/set-game-rating/{gameId}/{rating}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<Integer> setGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
 
         var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId);
@@ -252,6 +259,7 @@ public class UserController {
 
     @Transactional
     @PostMapping("{userId}/add-game-to-wishlist/{gameId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<?> addGameToUserWishlist(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
         var user = userRepository.findUserById(userId);
@@ -268,6 +276,7 @@ public class UserController {
 
     @Transactional
     @DeleteMapping("{userId}/delete-game-from-wishlist/{gameId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<?> deleteGameFromUserWishlist(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
         var user = userRepository.findUserById(userId);
@@ -282,6 +291,7 @@ public class UserController {
 
     @Transactional
     @PostMapping("{userId}/add-game-to-sell/{gameId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<GameSellDTO>> addGameToSellList(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody GameSell gameSell){
 
         var user = userRepository.findUserById(userId);
@@ -308,6 +318,7 @@ public class UserController {
 
     @Transactional
     @DeleteMapping("{userId}/remove-game-from-sell/{gameId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
      public ResponseEntity<Integer> removeGameFromSell(@PathVariable Integer userId, @PathVariable Integer gameId){
 
         var gameSell = gameSellRepository.findGameSell_ByGameIdAndUserId(gameId, userId);
@@ -318,6 +329,7 @@ public class UserController {
 
     @Transactional
     @PutMapping("/update-game-to-sell")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> updateSellGame(@RequestBody GameSell gameSell){
 
         if (gameSell.getComment() != null){
@@ -337,6 +349,7 @@ public class UserController {
 
     @Transactional
     @PostMapping("{userId}/add-diary/{gameId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<DiaryDTO> addDiary(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody Diary diary){
 
         var user = userRepository.findUserById(userId);
@@ -354,6 +367,7 @@ public class UserController {
 
     @Transactional
     @DeleteMapping("{userId}/remove-diary/{diaryId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> deleteDiary(@PathVariable Integer userId, @PathVariable Integer diaryId){
 
         var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
@@ -365,6 +379,7 @@ public class UserController {
 
     @Transactional
     @PutMapping({"{userId}/update-diary/{diaryId}"})
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<DiaryDTO> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest){
 
         var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);

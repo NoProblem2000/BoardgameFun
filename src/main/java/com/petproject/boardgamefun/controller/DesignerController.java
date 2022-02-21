@@ -7,6 +7,7 @@ import com.petproject.boardgamefun.repository.DesignerRepository;
 import com.petproject.boardgamefun.service.DesignerService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.transaction.Transactional;
@@ -42,6 +43,7 @@ public class DesignerController {
 
     @Transactional
     @PostMapping("/add")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<DesignerDTO>> addDesigner(@RequestBody DesignerRequest designerRequest){
         var designer = new Designer();
         designer.setName(designerRequest.getName());
@@ -54,6 +56,7 @@ public class DesignerController {
 
     @Transactional
     @PatchMapping("/update/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<DesignerDTO>> updateDesigner(@PathVariable Integer id, @RequestBody DesignerRequest designerRequest){
         var designer = designerRepository.findDesignerById(id);
 
@@ -67,6 +70,7 @@ public class DesignerController {
 
     @Transactional
     @DeleteMapping("/delete/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<DesignerDTO>> deleteDesigner(@PathVariable Integer id){
 
         var designer = designerRepository.findDesignerById(id);

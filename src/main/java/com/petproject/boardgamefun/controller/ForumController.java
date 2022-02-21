@@ -13,6 +13,7 @@ import com.petproject.boardgamefun.service.ForumMessageService;
 import com.petproject.boardgamefun.service.ForumService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.transaction.Transactional;
@@ -67,6 +68,7 @@ public class ForumController {
 
     @Transactional
     @PostMapping("add-forum/{gameId}/{userId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<ForumDTO> addForum(@PathVariable Integer gameId, @PathVariable Integer userId, @RequestBody ForumRequest forumRequest) {
 
         var user = userRepository.findUserById(userId);
@@ -88,6 +90,7 @@ public class ForumController {
 
     @Transactional
     @PatchMapping("/update-forum/{forumId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<ForumDTO> updateForum(@PathVariable Integer forumId, @RequestBody ForumRequest forumRequest) {
         var forum = forumRepository.findForumById(forumId);
 
@@ -106,6 +109,7 @@ public class ForumController {
 
     @Transactional
     @DeleteMapping("/delete-forum/{forumId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> deleteForum(@PathVariable Integer forumId) {
 
         var forum = forumRepository.findForumById(forumId);
@@ -131,6 +135,7 @@ public class ForumController {
 
     @Transactional
     @PostMapping("/{forumId}/add-message/{userId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<ForumMessageDTO>> addMessage(@PathVariable Integer forumId, @PathVariable Integer userId, @RequestBody ForumMessageRequest forumMessageRequest) {
         var forum = forumRepository.findForumById(forumId);
         var user = userRepository.findUserById(userId);
@@ -152,6 +157,7 @@ public class ForumController {
 
     @Transactional
     @PatchMapping("/{forumId}/update-message/{messageId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<ForumMessageDTO>> updateMessage(@PathVariable Integer messageId, @PathVariable Integer forumId, @RequestBody ForumMessageRequest forumMessageRequest) {
         var message = forumMessageRepository.findForumMessageById(messageId);
 
@@ -167,6 +173,7 @@ public class ForumController {
 
     @Transactional
     @DeleteMapping("/{forumId}/delete-message/{messageId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<ForumMessageDTO>> deleteMessage(@PathVariable Integer forumId, @PathVariable Integer messageId) {
         var message = forumMessageRepository.findForumMessageById(messageId);
 
@@ -178,6 +185,7 @@ public class ForumController {
 
     @Transactional
     @PostMapping("/{forumId}/set-rating/{userId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<ForumDTO> setForumRating(@PathVariable Integer forumId, @PathVariable Integer userId, @RequestBody ForumRatingRequest forumRatingRequest) {
 
         var forumRating = forumRatingRepository.findForumRating_ByForumIdAndUserId(forumId, userId);
@@ -198,6 +206,7 @@ public class ForumController {
 
     @Transactional
     @DeleteMapping("/{forumId}/remove-rating/{ratingId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<ForumDTO> removeRatingFromForum(@PathVariable Integer forumId, @PathVariable Integer ratingId) {
         var forumRating = forumRatingRepository.findForumRatingById(ratingId);
         forumRatingRepository.delete(forumRating);

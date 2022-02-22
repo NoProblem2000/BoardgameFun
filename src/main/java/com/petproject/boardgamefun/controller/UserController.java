@@ -12,6 +12,9 @@ import com.petproject.boardgamefun.security.enums.Role;
 import com.petproject.boardgamefun.security.jwt.JwtUtils;
 import com.petproject.boardgamefun.security.model.JwtResponse;
 import com.petproject.boardgamefun.security.model.LoginRequest;
+import com.petproject.boardgamefun.security.model.RefreshTokenRequest;
+import com.petproject.boardgamefun.security.model.RefreshTokenResponse;
+import com.petproject.boardgamefun.security.services.RefreshTokenService;
 import com.petproject.boardgamefun.security.services.UserDetailsImpl;
 import com.petproject.boardgamefun.service.DiaryService;
 import com.petproject.boardgamefun.service.GameSellService;
@@ -50,9 +53,11 @@ public class UserController {
     final GameService gameService;
     final UserService userService;
 
+
     final PasswordEncoder passwordEncoder;
     final JwtUtils jwtUtils;
     final AuthenticationManager authenticationManager;
+    final RefreshTokenService refreshTokenService;
 
     public UserController(GameRepository gameRepository,
                           UserRepository userRepository,
@@ -61,7 +66,7 @@ public class UserController {
                           UserWishRepository userWishRepository,
                           GameSellRepository gameSellRepository, DiaryRepository diaryRepository, DiaryService diaryService, GameSellService gameSellService, GameService gameService, UserService userService, PasswordEncoder passwordEncoder,
                           JwtUtils jwtUtils,
-                          AuthenticationManager authenticationManager) {
+                          AuthenticationManager authenticationManager, RefreshTokenService refreshTokenService) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.userOwnGameRepository = userOwnGameRepository;
@@ -76,6 +81,7 @@ public class UserController {
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.authenticationManager = authenticationManager;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @GetMapping()
@@ -95,7 +101,8 @@ public class UserController {
         String jwt = jwtUtils.generateJwtToken(authentication);
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        return new ResponseEntity<>(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), userDetails.getEmail()), HttpStatus.OK);
+        var refreshToken = refreshTokenService.createRefreshToken(loginRequest.getName());
+        return new ResponseEntity<>(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), refreshToken), HttpStatus.OK);
     }
 
     @PostMapping("/sign-up")
@@ -116,6 +123,16 @@ public class UserController {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+        String refreshToken = refreshTokenRequest.getRefreshToken();
+        if (refreshTokenService.verifyExpiration(refreshToken)) {
+            var token = jwtUtils.generateJwtToken(refreshTokenRequest.getUserName());
+            return new ResponseEntity<>(new RefreshTokenResponse(token, refreshToken), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+    }
+
     @Transactional
     @PostMapping("/upload-avatar/{userName}")
     public ResponseEntity<String> uploadAvatar(@PathVariable String userName, @RequestParam("avatar") MultipartFile file) throws IOException {
@@ -124,20 +141,19 @@ public class UserController {
         userRepository.save(user);
         return new ResponseEntity<>(HttpStatus.OK);
     }
-    
+
 
     @Transactional
     @PatchMapping("/edit/{userId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<?> editUser(@PathVariable Integer userId, @RequestBody UserEditRequest userEditRequest){
+    public ResponseEntity<?> editUser(@PathVariable Integer userId, @RequestBody UserEditRequest userEditRequest) {
         var user = userRepository.findUserById(userId);
         if (userEditRequest.getName() != null && !userRepository.existsByName(userEditRequest.getName())) {
             user.setName(userEditRequest.getName());
-        }
-        else{
+        } else {
             return new ResponseEntity<>("Пользователь с таким никнеймом уже существует", HttpStatus.BAD_REQUEST);
         }
-        if (userEditRequest.getRole() != null && !Objects.equals(userEditRequest.getRole(), user.getRole())){
+        if (userEditRequest.getRole() != null && !Objects.equals(userEditRequest.getRole(), user.getRole())) {
             user.setRole(userEditRequest.getRole());
         }
 
@@ -149,12 +165,11 @@ public class UserController {
     @Transactional
     @PatchMapping("/change-password/{userId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<?> changePassword(@PathVariable Integer userId, @RequestBody PasswordChangeRequest passwordRequest){
+    public ResponseEntity<?> changePassword(@PathVariable Integer userId, @RequestBody PasswordChangeRequest passwordRequest) {
         var user = userRepository.findUserById(userId);
-        if (passwordRequest.getPassword() != null && passwordEncoder.matches(passwordRequest.getPassword(), user.getPassword())){
+        if (passwordRequest.getPassword() != null && passwordEncoder.matches(passwordRequest.getPassword(), user.getPassword())) {
             user.setPassword(passwordEncoder.encode(passwordRequest.getPassword()));
-        }
-        else {
+        } else {
             return new ResponseEntity<>("Вы ввели точно такой же пароль", HttpStatus.BAD_REQUEST);
         }
         userRepository.save(user);
@@ -292,7 +307,7 @@ public class UserController {
     @Transactional
     @PostMapping("{userId}/add-game-to-sell/{gameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<List<GameSellDTO>> addGameToSellList(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody GameSell gameSell){
+    public ResponseEntity<List<GameSellDTO>> addGameToSellList(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody GameSell gameSell) {
 
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
@@ -308,18 +323,18 @@ public class UserController {
 
     @Transactional
     @GetMapping("{userId}/games-to-sell")
-    public ResponseEntity<List<GameSellDTO>> getGameSellList(@PathVariable Integer userId){
+    public ResponseEntity<List<GameSellDTO>> getGameSellList(@PathVariable Integer userId) {
 
         var gameSellList = gameSellService.projectionsToGameSellDTO(gameRepository.getGameSellList(userId));
 
-        return new ResponseEntity<>(gameSellList,HttpStatus.OK);
+        return new ResponseEntity<>(gameSellList, HttpStatus.OK);
     }
 
 
     @Transactional
     @DeleteMapping("{userId}/remove-game-from-sell/{gameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-     public ResponseEntity<Integer> removeGameFromSell(@PathVariable Integer userId, @PathVariable Integer gameId){
+    public ResponseEntity<Integer> removeGameFromSell(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
         var gameSell = gameSellRepository.findGameSell_ByGameIdAndUserId(gameId, userId);
         gameSellRepository.delete(gameSell);
@@ -330,15 +345,15 @@ public class UserController {
     @Transactional
     @PutMapping("/update-game-to-sell")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<String> updateSellGame(@RequestBody GameSell gameSell){
+    public ResponseEntity<String> updateSellGame(@RequestBody GameSell gameSell) {
 
-        if (gameSell.getComment() != null){
+        if (gameSell.getComment() != null) {
             gameSell.setComment(gameSell.getComment());
         }
-        if (gameSell.getPrice() != null){
+        if (gameSell.getPrice() != null) {
             gameSell.setPrice(gameSell.getPrice());
         }
-        if (gameSell.getCondition() != null){
+        if (gameSell.getCondition() != null) {
             gameSell.setCondition(gameSell.getCondition());
         }
 
@@ -350,7 +365,7 @@ public class UserController {
     @Transactional
     @PostMapping("{userId}/add-diary/{gameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<DiaryDTO> addDiary(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody Diary diary){
+    public ResponseEntity<DiaryDTO> addDiary(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody Diary diary) {
 
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
@@ -368,7 +383,7 @@ public class UserController {
     @Transactional
     @DeleteMapping("{userId}/remove-diary/{diaryId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<String> deleteDiary(@PathVariable Integer userId, @PathVariable Integer diaryId){
+    public ResponseEntity<String> deleteDiary(@PathVariable Integer userId, @PathVariable Integer diaryId) {
 
         var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
 
@@ -380,10 +395,10 @@ public class UserController {
     @Transactional
     @PutMapping({"{userId}/update-diary/{diaryId}"})
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<DiaryDTO> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest){
+    public ResponseEntity<DiaryDTO> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest) {
 
         var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
-        if (diaryRequest.getTitle() != null && !Objects.equals(diary.getTitle(), diaryRequest.getTitle())){
+        if (diaryRequest.getTitle() != null && !Objects.equals(diary.getTitle(), diaryRequest.getTitle())) {
             diary.setTitle(diaryRequest.getTitle());
         }
         if (diaryRequest.getText() != null && !Objects.equals(diary.getText(), diaryRequest.getText())) {

@@ -9,11 +9,13 @@ public class JwtResponse {
     private Integer id;
     private String userName;
     private String email;
+    private String refreshToken;
 
-    public JwtResponse(String jwt, Integer id, String username, String email) {
+    public JwtResponse(String jwt, Integer id, String username, String email, String refreshToken) {
         this.token = jwt;
         this.id = id;
         this.userName = username;
         this.email = email;
+        this.refreshToken = refreshToken;
     }
 }

@@ -1,8 +1,8 @@
 package com.petproject.boardgamefun.controller;
 
+import com.petproject.boardgamefun.dto.FilterGamesDTO;
 import com.petproject.boardgamefun.dto.GameDTO;
-import com.petproject.boardgamefun.dto.projection.GameProjection;
-import com.petproject.boardgamefun.dto.projection.UsersGameRatingProjection;
+import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
 import com.petproject.boardgamefun.model.Expansion;
 import com.petproject.boardgamefun.model.Game;
 import com.petproject.boardgamefun.model.GameByDesigner;
@@ -11,9 +11,12 @@ import com.petproject.boardgamefun.repository.*;
 import com.petproject.boardgamefun.service.GameService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -40,9 +43,9 @@ public class GameController {
 
     @Transactional
     @GetMapping()
-    ResponseEntity<List<GameProjection>> getGames() {
+    ResponseEntity<List<GameDTO>> getGames() {
 
-        var games = gameRepository.findGames();
+        var games = gameService.projectionsToGameDTO(gameRepository.findGames());
 
         return new ResponseEntity<>(games, HttpStatus.OK);
     }
@@ -56,7 +59,7 @@ public class GameController {
 
     @Transactional
     @GetMapping("/get-games-by-filter/{title}")
-    public ResponseEntity<List<String>> getGamesByTitle(@PathVariable String title){
+    public ResponseEntity<List<FilterGamesDTO>> getGamesByTitle(@PathVariable String title) {
         var games = gameService.getTitlesFromProjections(gameRepository.findGamesUsingTitle(title));
         return new ResponseEntity<>(games, HttpStatus.OK);
     }
@@ -64,22 +67,37 @@ public class GameController {
 
     @Transactional
     @PostMapping("/add")
-    public ResponseEntity<Game> addGame(@RequestBody Game newGame) {
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<GameDTO> addGame(@RequestBody Game newGame) {
         gameRepository.save(newGame);
+        var game = gameService.entityToGameDTO(newGame);
 
-        return new ResponseEntity<>(newGame, HttpStatus.OK);
+        return new ResponseEntity<>(game, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PostMapping("/upload-image/{gameId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<GameDTO> uploadImage(@PathVariable Integer gameId, @RequestParam("picture") MultipartFile file) throws IOException {
+        var game = gameRepository.findGameById(gameId);
+        game.setPicture(file.getBytes());
+        gameRepository.save(game);
+        var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGame(gameId), designerRepository.findDesignersUsingGame(gameId));
+        return new ResponseEntity<>(gameDTO, HttpStatus.OK);
     }
 
     @Transactional
     @PutMapping("/update")
-    public ResponseEntity<Game> updateGame(@RequestBody Game updatedGame) {
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<GameDTO> updateGame(@RequestBody Game updatedGame) {
         gameRepository.save(updatedGame);
-
-        return new ResponseEntity<>(updatedGame, HttpStatus.OK);
+        var game = gameService.entityToGameDTO(updatedGame);
+        return new ResponseEntity<>(game, HttpStatus.OK);
     }
 
     @Transactional
     @DeleteMapping("/remove")
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> removeGameFromSite(@RequestBody Game deleteGame) {
         gameRepository.delete(deleteGame);
 
@@ -88,15 +106,16 @@ public class GameController {
 
     @Transactional
     @GetMapping("/expansions/{gameId}")
-    public ResponseEntity<List<Game>> getExpansions(@PathVariable Integer gameId) {
-        var gamesExpansions = gameRepository.getExpansions(gameId);
+    public ResponseEntity<List<GameDTO>> getExpansions(@PathVariable Integer gameId) {
+        var gamesExpansions = gameService.entitiesToGameDTO(gameRepository.getExpansions(gameId));
 
         return new ResponseEntity<>(gamesExpansions, HttpStatus.OK);
     }
 
     @Transactional
     @PostMapping("/add-expansion/{parentGameId}/{daughterGameId}")
-    public ResponseEntity<List<Game>> addExpansion(@PathVariable Integer parentGameId, @PathVariable Integer daughterGameId) {
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<List<GameDTO>> addExpansion(@PathVariable Integer parentGameId, @PathVariable Integer daughterGameId) {
         var parentGame = gameRepository.findGameById(parentGameId);
         var daughterGame = gameRepository.findGameById(daughterGameId);
 
@@ -105,33 +124,35 @@ public class GameController {
         expansion.setDaughterGame(daughterGame);
         expansionRepository.save(expansion);
 
-        var gamesExpansions = gameRepository.getExpansions(parentGameId);
+        var gamesExpansions = gameService.entitiesToGameDTO(gameRepository.getExpansions(parentGameId));
 
         return new ResponseEntity<>(gamesExpansions, HttpStatus.OK);
     }
 
     @Transactional
     @DeleteMapping("/delete-expansion/{parentGameId}/{daughterGameId}")
-    public ResponseEntity<List<Game>> deleteExpansion(@PathVariable Integer daughterGameId, @PathVariable Integer parentGameId) {
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<List<GameDTO>> deleteExpansion(@PathVariable Integer daughterGameId, @PathVariable Integer parentGameId) {
         var expansion = expansionRepository.findExpansion_ByDaughterGameIdAndParentGameId(daughterGameId, parentGameId);
         expansionRepository.delete(expansion);
 
-        var gamesExpansions = gameRepository.getExpansions(parentGameId);
+        var gamesExpansions = gameService.entitiesToGameDTO(gameRepository.getExpansions(parentGameId));
 
         return new ResponseEntity<>(gamesExpansions, HttpStatus.OK);
     }
 
     @Transactional
     @GetMapping("/similar/{gameId}")
-    public ResponseEntity<List<Game>> getSimilarGames(@PathVariable Integer gameId) {
-        var similarGames = gameRepository.getSimilarGames(gameId);
+    public ResponseEntity<List<GameDTO>> getSimilarGames(@PathVariable Integer gameId) {
+        var similarGames = gameService.entitiesToGameDTO(gameRepository.getSimilarGames(gameId));
 
         return new ResponseEntity<>(similarGames, HttpStatus.OK);
     }
 
     @Transactional
     @PostMapping("/add-similar/{referenceGameId}/{sourceGameId}")
-    public ResponseEntity<List<Game>> addSimilarGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<List<GameDTO>> addSimilarGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
         var referenceGame = gameRepository.findGameById(referenceGameId);
         var sourceGame = gameRepository.findGameById(sourceGameId);
 
@@ -140,43 +161,38 @@ public class GameController {
         sameGame.setSourceGame(sourceGame);
         sameGameRepository.save(sameGame);
 
-        var sameGames = gameRepository.getSimilarGames(referenceGameId);
+        var sameGames = gameService.entitiesToGameDTO(gameRepository.getSimilarGames(referenceGameId));
 
         return new ResponseEntity<>(sameGames, HttpStatus.OK);
     }
 
     @Transactional
     @DeleteMapping("/delete-similar/{referenceGameId}/{sourceGameId}")
-    public ResponseEntity<List<Game>> deleteSameGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<List<GameDTO>> deleteSameGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
         var sameGame = sameGameRepository.findSameGame_ByReferenceGameIdAndSourceGameId(referenceGameId, sourceGameId);
         sameGameRepository.delete(sameGame);
 
-        var sameGames = gameRepository.getSimilarGames(referenceGameId);
+        var sameGames = gameService.entitiesToGameDTO(gameRepository.getSimilarGames(referenceGameId));
 
         return new ResponseEntity<>(sameGames, HttpStatus.OK);
     }
 
     @Transactional
     @GetMapping("/{gameId}/users-rating")
-    public ResponseEntity<List<UsersGameRatingProjection>> getUsersRating(@PathVariable Integer gameId) {
+    public ResponseEntity<List<UsersGameRatingDTO>> getUsersRating(@PathVariable Integer gameId) {
 
-        var ratings = userRepository.findGameRatings(gameId);
+        var ratings = gameService.usersGameRatingToDTO(userRepository.findGameRatings(gameId));
 
         return new ResponseEntity<>(ratings, HttpStatus.OK);
-    }
-
-    @Transactional
-    @GetMapping("/with-rating")
-    public ResponseEntity<List<GameProjection>> getGamesWithRating() {
-        var games = gameRepository.findGames();
-        return new ResponseEntity<>(games, HttpStatus.OK);
     }
 
     //Поменять на тип текст либо убрать аннотацию
 
     @Transactional
     @PostMapping("/{gameId}/set-designer/{designerId}")
-    public ResponseEntity<GameDTO> addDesignerToGame(@PathVariable Integer gameId, @PathVariable Integer designerId){
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<GameDTO> addDesignerToGame(@PathVariable Integer gameId, @PathVariable Integer designerId) {
         var game = gameRepository.findGameById(gameId);
         var designer = designerRepository.findDesignerById(designerId);
 
@@ -194,7 +210,8 @@ public class GameController {
 
     @Transactional
     @DeleteMapping("{gameId}/remove-designer/{gameByDesignerId}")
-    public ResponseEntity<GameDTO> deleteDesignerFromGame(@PathVariable Integer gameId, @PathVariable Integer gameByDesignerId){
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<GameDTO> deleteDesignerFromGame(@PathVariable Integer gameId, @PathVariable Integer gameByDesignerId) {
 
         gameByDesignerRepository.deleteById(gameByDesignerId);
 

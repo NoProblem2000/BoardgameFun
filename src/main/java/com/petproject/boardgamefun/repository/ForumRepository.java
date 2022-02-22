@@ -27,5 +27,11 @@ public interface ForumRepository extends JpaRepository<Forum, Integer> {
             "group by f")
     List<ForumProjection> findForumsWithRating();
 
+    @Query("select f as forum, avg(fr.rating) as rating from Forum f " +
+            "left join ForumRating fr on fr.forum.id = f.id " +
+            "where f.id = :id " +
+            "group by f")
+    ForumProjection findForumWithRatingUsingId(Integer id);
+
    Forum findForumById(Integer id);
 }

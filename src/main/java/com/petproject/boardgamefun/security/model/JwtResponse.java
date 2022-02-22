@@ -1,13 +1,21 @@
 package com.petproject.boardgamefun.security.model;
 
-public class JwtResponse {
-    private final String token;
-    private final String userName;
-    private final String email;
+import lombok.Data;
 
-    public JwtResponse(String token, String userName, String email){
-        this.token = token;
-        this.userName = userName;
+@Data
+public class JwtResponse {
+    private String token;
+    private final String type = "Bearer";
+    private Integer id;
+    private String userName;
+    private String email;
+    private String refreshToken;
+
+    public JwtResponse(String jwt, Integer id, String username, String email, String refreshToken) {
+        this.token = jwt;
+        this.id = id;
+        this.userName = username;
         this.email = email;
+        this.refreshToken = refreshToken;
     }
 }

@@ -19,8 +19,8 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
             "group by g")
     GameProjection findGame(Integer id);
 
-    @Query("select g.title as title from Game g " +
-            "where g.title like :title%")
+    @Query("select g.title as title, g.id as id from Game g " +
+            "where lower(g.title) like :title%")
     List<GamesFilterByTitleProjection> findGamesUsingTitle(String title);
 
     @Query("select g as game, avg(rgbu.rating) as rating from Game g " +

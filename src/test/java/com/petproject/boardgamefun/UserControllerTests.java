@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,13 +26,21 @@ public class UserControllerTests {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Test
     public void getUserShouldReturnStatusOkTest() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.get("/users/1")).andDo(print()).andExpect(status().isOk());
     }
 
     @Test
-    public void getUserShouldReturnStatusNotFound() throws Exception{
+    public void getUserShouldReturnStatusNotFound() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.get("/users/-1")).andDo(print()).andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void whenBadPathValueReturn400() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}", "userId")).andExpect(status().isBadRequest());
     }
 }

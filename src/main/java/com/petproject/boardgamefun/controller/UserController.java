@@ -181,8 +181,11 @@ public class UserController {
     @Transactional
     @GetMapping("{id}")
     public ResponseEntity<UserDTO> getUser(@PathVariable Integer id) {
-        var user = userService.entityToUserDTO(userRepository.findUserById(id));
-        return new ResponseEntity<>(user, HttpStatus.OK);
+        var userDTO = userService.entityToUserDTO(userRepository.findUserById(id));
+        if (userDTO.getUser() == null){
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(userDTO, HttpStatus.OK);
     }
 
     @Transactional
@@ -414,7 +417,6 @@ public class UserController {
 
     //todo: optimize response - not whole model, only needed fields
     //todo: add news
-    //todo: add rights
     //todo: unique repository???
 
 }

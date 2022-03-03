@@ -7,21 +7,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.dto.UserDTO;
 import com.petproject.boardgamefun.model.User;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import static org.junit.Assert.*;
 
-@RunWith(SpringRunner.class)
+
+@ExtendWith(MockitoExtension.class)
 @SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         classes = SpringSecurityWebTestConfig.class
 )
 @AutoConfigureMockMvc
@@ -30,6 +32,12 @@ public class UserControllerTests {
     @Autowired
     private MockMvc mockMvc;
 
+    ObjectMapper objectMapper;
+
+    public UserControllerTests(){
+        objectMapper = new ObjectMapper();
+        objectMapper.findAndRegisterModules();
+    }
 
     @Test
     public void getUserShouldReturnStatusOkTest() throws Exception {
@@ -42,12 +50,12 @@ public class UserControllerTests {
     }
 
     @Test
-    public void whenBadPathValueReturn400() throws Exception {
+    public void getUserWhenBadPathValueReturn400() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}", "userId")).andExpect(status().isBadRequest());
     }
 
     @Test
-    public void whenValidInput_thenReturnUserResource() throws Exception {
+    public void getUserWhenValidInput_thenReturnUserResource() throws Exception {
 
         User admin = new User();
         admin.setName("Admin");
@@ -56,13 +64,10 @@ public class UserControllerTests {
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}", "1")).andExpect(status().isOk()).andReturn();
 
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.findAndRegisterModules();
+        UserDTO userResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), UserDTO.class);
 
-        UserDTO userResponse = mapper.readValue(mvcResult.getResponse().getContentAsByteArray(), UserDTO.class);
-
-        assertEquals(userResponse.getUser().getName(), admin.getName());
-        assertEquals(userResponse.getUser().getMail(), admin.getMail());
-        assertEquals(userResponse.getUser().getRole(), admin.getRole());
+        Assertions.assertEquals(userResponse.getUser().getName(), admin.getName());
+        Assertions.assertEquals(userResponse.getUser().getMail(), admin.getMail());
+        Assertions.assertEquals(userResponse.getUser().getRole(), admin.getRole());
     }
 }

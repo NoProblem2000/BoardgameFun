@@ -5,6 +5,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petproject.boardgamefun.dto.UserDTO;
+import com.petproject.boardgamefun.model.User;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +14,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(
@@ -26,8 +30,6 @@ public class UserControllerTests {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Test
     public void getUserShouldReturnStatusOkTest() throws Exception {
@@ -42,5 +44,25 @@ public class UserControllerTests {
     @Test
     public void whenBadPathValueReturn400() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}", "userId")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void whenValidInput_thenReturnUserResource() throws Exception {
+
+        User admin = new User();
+        admin.setName("Admin");
+        admin.setRole("ROLE_ADMIN");
+        admin.setMail("chupacabra@mail.ru");
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}", "1")).andExpect(status().isOk()).andReturn();
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+
+        UserDTO userResponse = mapper.readValue(mvcResult.getResponse().getContentAsByteArray(), UserDTO.class);
+
+        assertEquals(userResponse.getUser().getName(), admin.getName());
+        assertEquals(userResponse.getUser().getMail(), admin.getMail());
+        assertEquals(userResponse.getUser().getRole(), admin.getRole());
     }
 }

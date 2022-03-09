@@ -204,6 +204,9 @@ public class UserController {
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
 
+        if (user == null || game == null)
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+
         var userOwnGame = new UserOwnGame();
         userOwnGame.setGame(game);
         userOwnGame.setUser(user);
@@ -219,6 +222,9 @@ public class UserController {
     public ResponseEntity<Integer> deleteGameFromUserCollection(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
         var userOwnGame = userOwnGameRepository.findUserOwnGame_ByGameIdAndUserId(gameId, userId);
+
+        if (userOwnGame == null)
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
 
         userOwnGameRepository.delete(userOwnGame);
 

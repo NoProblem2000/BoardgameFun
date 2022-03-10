@@ -93,7 +93,7 @@ public class UserController {
     @PostMapping("sign-in")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         if (!userRepository.existsByName(loginRequest.getName())) {
-            return new ResponseEntity<>("Пользователя с таким никнеймом не существует", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Пользователя с таким никнеймом не существует", HttpStatus.NOT_FOUND);
         }
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getName(), loginRequest.getPassword()));
 

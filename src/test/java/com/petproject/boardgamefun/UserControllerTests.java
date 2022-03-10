@@ -42,6 +42,11 @@ public class UserControllerTests {
     }
 
     @Test
+    public void getUsersShouldReturnOk() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway)).andDo(print()).andExpect(status().isOk());
+    }
+
+    @Test
     public void getUserShouldReturnStatusOkTest() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1")).andDo(print()).andExpect(status().isOk());
     }

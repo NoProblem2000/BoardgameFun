@@ -1,12 +1,10 @@
 package com.petproject.boardgamefun.security.model;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Data
-@Getter
-@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class LoginRequest {
 
     private String name;

@@ -8,12 +8,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.dto.UserDTO;
 import com.petproject.boardgamefun.model.User;
 
+import com.petproject.boardgamefun.security.model.LoginRequest;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -36,15 +38,66 @@ public class UserControllerTests {
 
     ObjectMapper objectMapper;
 
+    User admin;
+
     public UserControllerTests() {
         objectMapper = new ObjectMapper();
         objectMapper.findAndRegisterModules();
+        admin = new User();
+        admin.setName("Admin");
+        admin.setRole("ROLE_ADMIN");
+        admin.setMail("chupacabra@mail.ru");
     }
 
     @Test
     public void getUsersShouldReturnOk() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway)).andDo(print()).andExpect(status().isOk());
     }
+
+    @Test
+    public void authenticateUserShouldReturnOk() throws Exception{
+        LoginRequest loginRequest = new LoginRequest("Admin", "123qweAdmin");
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isOk());
+    }
+
+    @Test
+    public void authenticateUserShouldReturn415() throws Exception{
+        LoginRequest loginRequest = new LoginRequest("Admin", "123qweAdmin");
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
+                .contentType(MediaType.APPLICATION_XML)
+                .accept(MediaType.APPLICATION_XML)
+                .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isUnsupportedMediaType());
+    }
+
+    @Test
+    public void authenticateUserShouldReturnNotFound() throws Exception{
+        LoginRequest loginRequest = new LoginRequest("-1Admin", "123qweAdmin");
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void authenticateUserShouldReturnNotAuthorized() throws Exception{
+        LoginRequest loginRequest = new LoginRequest("Admin", "qweAdmin");
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void authenticateUserShouldReturnBadRequest() throws Exception{
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+
 
     @Test
     public void getUserShouldReturnStatusOkTest() throws Exception {
@@ -63,11 +116,6 @@ public class UserControllerTests {
 
     @Test
     public void getUserWhenValidInput_thenReturnUserResource() throws Exception {
-
-        User admin = new User();
-        admin.setName("Admin");
-        admin.setRole("ROLE_ADMIN");
-        admin.setMail("chupacabra@mail.ru");
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/{userId}", "1")).andExpect(status().isOk()).andReturn();
 

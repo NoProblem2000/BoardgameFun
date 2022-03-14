@@ -246,6 +246,9 @@ public class UserController {
 
         var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId);
 
+        if (ratingGameByUser == null)
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+
         ratingGameByUserRepository.delete(ratingGameByUser);
 
         return new ResponseEntity<>("Оценка с текущей игры удалена", HttpStatus.OK);

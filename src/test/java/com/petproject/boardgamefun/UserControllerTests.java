@@ -184,6 +184,38 @@ public class UserControllerTests {
 
     @Test
     @WithMockUser(roles = "USER")
+    public void deleteGameRatingShouldReturnNotFound_FirstParameter() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-1/delete-game-rating/1")).andDo(print()).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteGameRatingShouldReturnNotFound_SecondParameter() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game-rating/-1")).andDo(print()).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteGameRatingShouldReturnNotFound_BothParameters() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-1/delete-game-rating/-1")).andDo(print()).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @Order(2)
+    public void deleteGameRatingShouldReturnOk() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game-rating/1")).andDo(print()).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @Order(1)
+    public void setGameRatingShouldReturnOk() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/set-game-rating/1/10")).andDo(print()).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
     @Order(1)
     public void addGameToUserShouldReturnOk() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/1")).andDo(print()).andExpect(status().isOk());

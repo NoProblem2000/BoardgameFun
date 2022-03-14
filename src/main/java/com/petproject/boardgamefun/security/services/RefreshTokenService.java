@@ -26,6 +26,8 @@ public class RefreshTokenService {
 
     public boolean verifyExpiration(String authToken) {
         var token = authToken.substring(0, authToken.lastIndexOf('.') + 1);
+        if (token.equals(""))
+            throw new RefreshTokenException(authToken, "Incorrect access token");
         try {
             var expiration = ((Claims) Jwts.parser().parse(token).getBody()).getExpiration();
         } catch (ExpiredJwtException e) {

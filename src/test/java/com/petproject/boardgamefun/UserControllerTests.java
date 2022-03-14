@@ -2,13 +2,14 @@ package com.petproject.boardgamefun;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.dto.UserDTO;
 import com.petproject.boardgamefun.model.User;
 
+import com.petproject.boardgamefun.security.model.JwtResponse;
 import com.petproject.boardgamefun.security.model.LoginRequest;
+import com.petproject.boardgamefun.security.model.RefreshTokenRequest;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -55,7 +56,7 @@ public class UserControllerTests {
     }
 
     @Test
-    public void authenticateUserShouldReturnOk() throws Exception{
+    public void authenticateUserShouldReturnOk() throws Exception {
         LoginRequest loginRequest = new LoginRequest("Admin", "123qweAdmin");
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -63,7 +64,7 @@ public class UserControllerTests {
     }
 
     @Test
-    public void authenticateUserShouldReturn415() throws Exception{
+    public void authenticateUserShouldReturn415() throws Exception {
         LoginRequest loginRequest = new LoginRequest("Admin", "123qweAdmin");
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
                 .contentType(MediaType.APPLICATION_XML)
@@ -72,7 +73,7 @@ public class UserControllerTests {
     }
 
     @Test
-    public void authenticateUserShouldReturnNotFound() throws Exception{
+    public void authenticateUserShouldReturnNotFound() throws Exception {
         LoginRequest loginRequest = new LoginRequest("-1Admin", "123qweAdmin");
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -81,7 +82,7 @@ public class UserControllerTests {
     }
 
     @Test
-    public void authenticateUserShouldReturnNotAuthorized() throws Exception{
+    public void authenticateUserShouldReturnNotAuthorized() throws Exception {
         LoginRequest loginRequest = new LoginRequest("Admin", "qweAdmin");
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -90,14 +91,40 @@ public class UserControllerTests {
     }
 
     @Test
-    public void authenticateUserShouldReturnBadRequest() throws Exception{
+    public void authenticateUserShouldReturnBadRequest() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    public void refreshTokenShouldReturnNotAuthorizedBadAccessToken() throws Exception {
+        RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest("Admin", "bla-bla");
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/refresh-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(refreshTokenRequest)))
+                .andExpect(status().isUnauthorized());
+    }
 
+    @Test
+    public void refreshTokenShouldReturnIsOk() throws Exception {
+
+        LoginRequest loginRequest = new LoginRequest("Admin", "123qweAdmin");
+        MvcResult mvcResult =  this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isOk()).andReturn();
+
+        JwtResponse jwtResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), JwtResponse.class);
+
+        RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest(jwtResponse.getUserName(), jwtResponse.getRefreshToken());
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/refresh-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(refreshTokenRequest)))
+                .andExpect(status().isOk());
+    }
 
     @Test
     public void getUserShouldReturnStatusOkTest() throws Exception {

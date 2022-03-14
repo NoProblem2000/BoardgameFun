@@ -170,6 +170,20 @@ public class UserControllerTests {
 
     @Test
     @WithMockUser(roles = "USER")
+    public void getUserRatingListShouldReturnIsOk() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/games-rating")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void getUserRatingListShouldReturnBlankArray() throws Exception {
+        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/-1/games-rating")).andExpect(status().isOk()).andReturn();
+        var gameDTOS = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+        Assertions.assertEquals(0, gameDTOS.length);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
     @Order(1)
     public void addGameToUserShouldReturnOk() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/1")).andDo(print()).andExpect(status().isOk());

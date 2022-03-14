@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petproject.boardgamefun.dto.GameDTO;
 import com.petproject.boardgamefun.dto.UserDTO;
 import com.petproject.boardgamefun.model.User;
 
@@ -112,7 +113,7 @@ public class UserControllerTests {
     public void refreshTokenShouldReturnIsOk() throws Exception {
 
         LoginRequest loginRequest = new LoginRequest("Admin", "123qweAdmin");
-        MvcResult mvcResult =  this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in").contentType(MediaType.APPLICATION_JSON)
+        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isOk()).andReturn();
 
@@ -151,6 +152,20 @@ public class UserControllerTests {
         Assertions.assertEquals(userResponse.getUser().getName(), admin.getName());
         Assertions.assertEquals(userResponse.getUser().getMail(), admin.getMail());
         Assertions.assertEquals(userResponse.getUser().getRole(), admin.getRole());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void getUserCollectionShouldReturnIsOk() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/games")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void getUserCollectionShouldReturnBlankArray() throws Exception {
+        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/-1/games")).andExpect(status().isOk()).andReturn();
+        var gameDTOS = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+        Assertions.assertEquals(0, gameDTOS.length);
     }
 
     @Test

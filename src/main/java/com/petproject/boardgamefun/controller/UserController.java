@@ -259,21 +259,45 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<Integer> setGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
 
-        var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId);
-
-        if (ratingGameByUser != null) {
-            ratingGameByUser.setRating(rating);
-            ratingGameByUserRepository.save(ratingGameByUser);
-        } else {
-            var gameRating = new RatingGameByUser();
-            var game = gameRepository.findGameById(gameId);
-            var user = userRepository.findUserById(userId);
-            gameRating.setGame(game);
-            gameRating.setUser(user);
-            gameRating.setRating(rating);
-
-            ratingGameByUserRepository.save(gameRating);
+        if (rating > 10 || rating < 1) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
+
+        var gameRating = new RatingGameByUser();
+        var game = gameRepository.findGameById(gameId);
+        var user = userRepository.findUserById(userId);
+
+        if (game == null || user == null)
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+
+        gameRating.setGame(game);
+        gameRating.setUser(user);
+        gameRating.setRating(rating);
+
+        ratingGameByUserRepository.save(gameRating);
+
+
+        return new ResponseEntity<>(rating, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PostMapping("/{userId}/update-game-rating/{gameId}/{rating}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<Integer> updateGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
+
+        if (rating > 10 || rating < 1) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+        var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId);
+        if (ratingGameByUser == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+
+        ratingGameByUser.setRating(rating);
+        ratingGameByUserRepository.save(ratingGameByUser);
+
+
+        ratingGameByUserRepository.save(ratingGameByUser);
 
         return new ResponseEntity<>(rating, HttpStatus.OK);
     }

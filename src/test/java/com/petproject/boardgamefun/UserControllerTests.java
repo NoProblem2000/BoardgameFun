@@ -216,6 +216,37 @@ public class UserControllerTests {
 
     @Test
     @WithMockUser(roles = "USER")
+    public void setGameRatingShouldReturnBadRequestLessThanNormal() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/set-game-rating/1/0")).andDo(print()).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void setGameRatingShouldReturnBadRequestMoreThanNormal() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/set-game-rating/1/11")).andDo(print()).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void setGameRatingShouldReturnNotFound_FirstParameter() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/set-game-rating/1/1")).andDo(print()).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void setGameRatingShouldReturnNotFound_SecondParameter() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/set-game-rating/-1/1")).andDo(print()).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void setGameRatingShouldReturnNotFound_BothParameters() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/set-game-rating/-1/1")).andDo(print()).andExpect(status().isNotFound());
+    }
+
+
+    @Test
+    @WithMockUser(roles = "USER")
     @Order(1)
     public void addGameToUserShouldReturnOk() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/1")).andDo(print()).andExpect(status().isOk());

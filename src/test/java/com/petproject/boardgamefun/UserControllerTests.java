@@ -37,6 +37,7 @@ public class UserControllerTests {
 
     @Autowired
     private MockMvc mockMvc;
+    private static final int  insertDataOrder = 1, updateDataOrder = 2, deleteDataOrder = 3;
 
     ObjectMapper objectMapper;
 
@@ -202,14 +203,14 @@ public class UserControllerTests {
 
     @Test
     @WithMockUser(roles = "USER")
-    @Order(2)
+    @Order(deleteDataOrder)
     public void deleteGameRatingShouldReturnOk() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game-rating/1")).andDo(print()).andExpect(status().isOk());
     }
 
     @Test
     @WithMockUser(roles = "USER")
-    @Order(1)
+    @Order(insertDataOrder)
     public void setGameRatingShouldReturnOk() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/set-game-rating/1/10")).andDo(print()).andExpect(status().isOk());
     }
@@ -244,10 +245,47 @@ public class UserControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/set-game-rating/-1/1")).andDo(print()).andExpect(status().isNotFound());
     }
 
+    @Test
+    @WithMockUser(roles = "USER")
+    @Order(updateDataOrder)
+    public void updateGameRatingShouldReturnOk() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/update-game-rating/1/10")).andDo(print()).andExpect(status().isOk());
+    }
 
     @Test
     @WithMockUser(roles = "USER")
-    @Order(1)
+    public void updateGameRatingShouldReturnBadRequestLessThanNormal() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/update-game-rating/1/0")).andDo(print()).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateGameRatingShouldReturnBadRequestMoreThanNormal() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/update-game-rating/1/11")).andDo(print()).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateGameRatingShouldReturnNotFound_FirstParameter() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/update-game-rating/1/1")).andDo(print()).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateGameRatingShouldReturnNotFound_SecondParameter() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/update-game-rating/-1/1")).andDo(print()).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateGameRatingShouldReturnNotFound_BothParameters() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/update-game-rating/-1/1")).andDo(print()).andExpect(status().isNotFound());
+    }
+
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @Order(insertDataOrder)
     public void addGameToUserShouldReturnOk() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/1")).andDo(print()).andExpect(status().isOk());
     }
@@ -326,7 +364,7 @@ public class UserControllerTests {
 
     @Test
     @WithMockUser(roles = "USER")
-    @Order(2)
+    @Order(deleteDataOrder)
     public void deleteGameFromUserCollectionShouldReturnOk() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game/1")).andDo(print()).andExpect(status().isOk());
     }

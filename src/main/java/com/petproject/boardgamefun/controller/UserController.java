@@ -316,6 +316,10 @@ public class UserController {
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
 
+        if (user == null || game == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+
         var userWish = new UserWish();
         userWish.setGame(game);
         userWish.setUser(user);

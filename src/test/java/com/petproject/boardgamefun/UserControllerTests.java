@@ -388,6 +388,53 @@ public class UserControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/bla/wishlist")).andExpect(status().isBadRequest());
     }
 
+    @Test
+    @WithMockUser(roles = "USER")
+    @Order(insertDataOrder)
+    public void addGameToUserWishlistShouldReturnOk() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-wishlist/1")).andDo(print()).andExpect(status().isOk());
+    }
 
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addGameToUserWishlistShouldReturnStatusNotFound_FirstParameter() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-11/add-game-to-wishlist/1")).andDo(print()).andExpect(status().isNotFound());
+    }
 
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addGameToUserWishlistShouldReturnStatusNotFound_SecondParameter() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-wishlist/-1")).andDo(print()).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addGameToUserWishlistShouldReturnStatusNotFound_BothParameters() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/add-game-to-wishlist/-1")).andDo(print()).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addGameToUserWishlistShouldReturnStatusBadRequest_FirstParameter() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/bla/add-game-to-wishlist/1")).andDo(print()).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addGameToUserWishlistShouldReturnStatusBadRequest_SecondParameter() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-wishlist/bla")).andDo(print()).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addGameToUserWishlistShouldReturnStatusBadRequest_BothParameters() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/bla/add-game-to-wishlist/bla")).andDo(print()).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @Order(deleteDataOrder)
+    public void deleteGameFromUserWishlistShouldReturnOk() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game-from-wishlist/1")).andDo(print()).andExpect(status().isOk());
+    }
 }

@@ -282,7 +282,6 @@ public class UserControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/update-game-rating/-1/1")).andDo(print()).andExpect(status().isNotFound());
     }
 
-
     @Test
     @WithMockUser(roles = "USER")
     @Order(insertDataOrder)
@@ -368,5 +367,27 @@ public class UserControllerTests {
     public void deleteGameFromUserCollectionShouldReturnOk() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game/1")).andDo(print()).andExpect(status().isOk());
     }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void getUserWishlistShouldReturnIsOk() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/wishlist")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void getUserWishlistShouldReturnBlankArray() throws Exception {
+        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/-1/wishlist")).andExpect(status().isOk()).andReturn();
+        var gameDTOS = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+        Assertions.assertEquals(0, gameDTOS.length);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void getUserWishlistShouldReturnBadRequest() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/bla/wishlist")).andExpect(status().isBadRequest());
+    }
+
+
 
 }

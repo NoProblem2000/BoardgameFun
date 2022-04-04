@@ -207,6 +207,11 @@ public class UserController {
         if (user == null || game == null)
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
 
+        var games = gameRepository.findUserGames(userId);
+        if (games.stream().anyMatch(g -> g.getId().equals(gameId))) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
         var userOwnGame = new UserOwnGame();
         userOwnGame.setGame(game);
         userOwnGame.setUser(user);
@@ -262,6 +267,9 @@ public class UserController {
         if (rating > 10 || rating < 1) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
+        if (ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId) != null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
 
         var gameRating = new RatingGameByUser();
         var game = gameRepository.findGameById(gameId);
@@ -315,6 +323,10 @@ public class UserController {
 
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
+
+        if (userWishRepository.findByGameAndUser(game, user) != null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
 
         if (user == null || game == null) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);

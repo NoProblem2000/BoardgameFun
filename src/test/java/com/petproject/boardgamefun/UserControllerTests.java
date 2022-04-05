@@ -8,10 +8,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.GameDTO;
 import com.petproject.boardgamefun.dto.UserDTO;
+import com.petproject.boardgamefun.dto.projection.UserGameRatingProjection;
 import com.petproject.boardgamefun.model.Designer;
 import com.petproject.boardgamefun.model.Game;
 import com.petproject.boardgamefun.model.User;
 
+import com.petproject.boardgamefun.model.UserGameRatingPOJO;
 import com.petproject.boardgamefun.repository.GameRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
 import com.petproject.boardgamefun.security.model.JwtResponse;
@@ -76,6 +78,7 @@ public class UserControllerTests {
     private GameDTO gameDTO;
     private Game game;
     private List<Game> games;
+    private List<UserGameRatingProjection> userGameRatingProjections;
     private Designer designer;
     private DesignerDTO designerDTO;
 
@@ -93,12 +96,14 @@ public class UserControllerTests {
     ArgumentCaptor<List<Game>> gameListArgumentCaptor;
 
     @Captor
+    ArgumentCaptor<List<UserGameRatingProjection>> userGameRatingProjectionCaptor;
+
+    @Captor
     ArgumentCaptor<Game> gameArgumentCaptor;
 
     ObjectMapper objectMapper;
 
     User admin;
-
     @BeforeAll
     public void setup() {
         objectMapper = new ObjectMapper();
@@ -189,6 +194,10 @@ public class UserControllerTests {
         gameDTO = new GameDTO(game, 8.4, designers);
         designers.remove(1);
         GameDTO gameDTO1 = new GameDTO(game, 7.9, designers);
+
+        userGameRatingProjections = new ArrayList<>();
+        userGameRatingProjections.add(new UserGameRatingPOJO(game, 3));
+        userGameRatingProjections.add(new UserGameRatingPOJO(game, 10));
 
         gamesDTO = new ArrayList<>();
         gamesDTO.add(gameDTO);
@@ -370,15 +379,33 @@ public class UserControllerTests {
     @Test
     @WithMockUser(roles = "USER")
     public void getUserRatingListShouldReturnIsOk() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/games-rating")).andExpect(status().isOk());
+        when(gameRepository.findUserGameRatingList(1)).thenReturn(userGameRatingProjections);
+        when(gameService.userGameRatingToGameDTO(userGameRatingProjections)).thenReturn(gamesDTO);
+
+        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/games-rating")).andExpect(status().isOk()).andReturn();
+        var userRatingList = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+
+        verify(gameRepository, only()).findUserGameRatingList(1);
+        verify(gameService, only()).userGameRatingToGameDTO(userGameRatingProjectionCaptor.capture());
+
+        Assertions.assertNotEquals(userGameRatingProjectionCaptor.getValue().size(), 0);
+        Assertions.assertEquals(userRatingList[0].getGame().getId(), gamesDTO.get(0).getGame().getId());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void getUserRatingListShouldReturnBlankArray() throws Exception {
+        when(gameRepository.findUserGameRatingList(-1)).thenReturn(null);
+        when(gameService.userGameRatingToGameDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
+
         MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/-1/games-rating")).andExpect(status().isOk()).andReturn();
         var gameDTOS = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
-        Assertions.assertEquals(0, gameDTOS.length);
+
+        verify(gameRepository, only()).findUserGameRatingList(-1);
+        verify(gameService, only()).userGameRatingToGameDTO(userGameRatingProjectionCaptor.capture());
+
+        Assertions.assertNull(userGameRatingProjectionCaptor.getValue());
+        Assertions.assertEquals(gameDTOS.length, 0);
     }
 
     @Test

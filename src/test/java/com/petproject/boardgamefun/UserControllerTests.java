@@ -5,14 +5,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.GameDTO;
 import com.petproject.boardgamefun.dto.UserDTO;
+import com.petproject.boardgamefun.model.Designer;
+import com.petproject.boardgamefun.model.Game;
 import com.petproject.boardgamefun.model.User;
 
+import com.petproject.boardgamefun.repository.GameRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
 import com.petproject.boardgamefun.security.model.JwtResponse;
 import com.petproject.boardgamefun.security.model.LoginRequest;
 import com.petproject.boardgamefun.security.model.RefreshTokenRequest;
+import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.UserService;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,12 +60,24 @@ public class UserControllerTests {
     @MockBean
     private UserService userService;
 
+    @MockBean
+    private GameService gameService;
+
+    @MockBean
+    private GameRepository gameRepository;
+
     private List<UserDTO> usersDTO;
     private UserDTO userDTO;
     private User userAdmin;
     private User userModerator;
     private User user;
     private List<User> users;
+    private List<GameDTO> gamesDTO;
+    private GameDTO gameDTO;
+    private Game game;
+    private List<Game> games;
+    private Designer designer;
+    private DesignerDTO designerDTO;
 
     @Autowired
     private MockMvc mockMvc;
@@ -71,6 +88,12 @@ public class UserControllerTests {
 
     @Captor
     ArgumentCaptor<User> userArgumentCaptor;
+
+    @Captor
+    ArgumentCaptor<List<Game>> gameListArgumentCaptor;
+
+    @Captor
+    ArgumentCaptor<Game> gameArgumentCaptor;
 
     ObjectMapper objectMapper;
 
@@ -118,6 +141,59 @@ public class UserControllerTests {
         usersDTO.add(new UserDTO(userAdmin));
         usersDTO.add(new UserDTO(userModerator));
         usersDTO.add(new UserDTO(user));
+
+
+        game = new Game();
+        game.setId(1);
+        game.setTitle(" Игра номер 1");
+        game.setDescription("Отличная игра войнушка номер 1");
+        game.setAnnotation("Отличная игра номер 1");
+        game.setPicture(null);
+        game.setPlayerAge("14");
+        game.setPlayersMin(3);
+        game.setPlayersMax(5);
+        game.setTimeToPlayMin(120);
+        game.setTimeToPlayMax(360);
+        game.setYearOfRelease(OffsetDateTime.now());
+
+
+        Game game1 = new Game();
+        game1.setId(1);
+        game1.setTitle(" Игра номер 2");
+        game1.setDescription("Отличная игра войнушка номер 2");
+        game1.setAnnotation("Отличная игра номер 2");
+        game1.setPicture(null);
+        game1.setPlayerAge("16");
+        game1.setPlayersMin(2);
+        game1.setPlayersMax(4);
+        game1.setTimeToPlayMin(30);
+        game1.setTimeToPlayMax(120);
+        game1.setYearOfRelease(OffsetDateTime.now());
+
+        games = new ArrayList<>();
+        games.add(game);
+        games.add(game1);
+
+        designer = new Designer();
+        designer.setId(1);
+        designer.setName("Designer number one");
+
+        Designer designer2 = new Designer();
+        designer2.setId(2);
+        designer2.setName("Designer number two");
+
+        List<String> designers = new ArrayList<>();
+        designers.add(designer.getName());
+        designers.add(designer2.getName());
+
+        gameDTO = new GameDTO(game, 8.4, designers);
+        designers.remove(1);
+        GameDTO gameDTO1 = new GameDTO(game, 7.9, designers);
+
+        gamesDTO = new ArrayList<>();
+        gamesDTO.add(gameDTO);
+        gamesDTO.add(gameDTO1);
+
     }
 
     @Test
@@ -263,15 +339,32 @@ public class UserControllerTests {
     @Test
     @WithMockUser(roles = "USER")
     public void getUserCollectionShouldReturnIsOk() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/games")).andExpect(status().isOk());
+        when(gameRepository.findUserGames(1)).thenReturn(games);
+        when(gameService.entitiesToGameDTO(games)).thenReturn(gamesDTO);
+
+        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/games")).andExpect(status().isOk()).andReturn();
+        var userCollection = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+
+        verify(gameRepository, only()).findUserGames(1);
+        verify(gameService, only()).entitiesToGameDTO(gameListArgumentCaptor.capture());
+
+        Assertions.assertNotEquals(gameListArgumentCaptor.getValue().size(), 0);
+        Assertions.assertEquals(userCollection[0].getGame().getId(), gamesDTO.get(0).getGame().getId());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void getUserCollectionShouldReturnBlankArray() throws Exception {
+        when(gameRepository.findUserGames(-1)).thenReturn(null);
+        when(gameService.entitiesToGameDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
         MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/-1/games")).andExpect(status().isOk()).andReturn();
         var gameDTOS = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
-        Assertions.assertEquals(0, gameDTOS.length);
+
+        verify(gameRepository, only()).findUserGames(-1);
+        verify(gameService, only()).entitiesToGameDTO(gameListArgumentCaptor.capture());
+
+        Assertions.assertNull(gameListArgumentCaptor.getValue());
+        Assertions.assertEquals(gameDTOS.length, 0);
     }
 
     @Test

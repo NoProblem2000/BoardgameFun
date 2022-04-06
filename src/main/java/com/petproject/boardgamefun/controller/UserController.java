@@ -249,7 +249,7 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> deleteGameRating(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
-        var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId);
+        var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(userId, gameId);
 
         if (ratingGameByUser == null)
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
@@ -267,7 +267,7 @@ public class UserController {
         if (rating > 10 || rating < 1) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
-        if (ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId) != null) {
+        if (ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(userId, gameId) != null) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
 
@@ -296,7 +296,7 @@ public class UserController {
         if (rating > 10 || rating < 1) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
-        var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId);
+        var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(userId, gameId);
         if (ratingGameByUser == null) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }

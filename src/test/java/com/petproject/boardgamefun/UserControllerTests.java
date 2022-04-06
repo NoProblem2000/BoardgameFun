@@ -9,12 +9,10 @@ import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.GameDTO;
 import com.petproject.boardgamefun.dto.UserDTO;
 import com.petproject.boardgamefun.dto.projection.UserGameRatingProjection;
-import com.petproject.boardgamefun.model.Designer;
-import com.petproject.boardgamefun.model.Game;
-import com.petproject.boardgamefun.model.User;
+import com.petproject.boardgamefun.model.*;
 
-import com.petproject.boardgamefun.model.UserGameRatingPOJO;
 import com.petproject.boardgamefun.repository.GameRepository;
+import com.petproject.boardgamefun.repository.RatingGameByUserRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
 import com.petproject.boardgamefun.security.model.JwtResponse;
 import com.petproject.boardgamefun.security.model.LoginRequest;
@@ -68,6 +66,9 @@ public class UserControllerTests {
     @MockBean
     private GameRepository gameRepository;
 
+    @MockBean
+    private RatingGameByUserRepository ratingGameByUserRepository;
+
     private List<UserDTO> usersDTO;
     private UserDTO userDTO;
     private User userAdmin;
@@ -81,6 +82,7 @@ public class UserControllerTests {
     private List<UserGameRatingProjection> userGameRatingProjections;
     private Designer designer;
     private DesignerDTO designerDTO;
+    private RatingGameByUser ratingGameByUser;
 
     @Autowired
     private MockMvc mockMvc;
@@ -101,9 +103,13 @@ public class UserControllerTests {
     @Captor
     ArgumentCaptor<Game> gameArgumentCaptor;
 
+    @Captor
+    ArgumentCaptor<RatingGameByUser> ratingGameByUserArgumentCaptor;
+
     ObjectMapper objectMapper;
 
     User admin;
+
     @BeforeAll
     public void setup() {
         objectMapper = new ObjectMapper();
@@ -202,6 +208,12 @@ public class UserControllerTests {
         gamesDTO = new ArrayList<>();
         gamesDTO.add(gameDTO);
         gamesDTO.add(gameDTO1);
+
+        ratingGameByUser = new RatingGameByUser();
+        ratingGameByUser.setUser(user);
+        ratingGameByUser.setGame(game);
+        ratingGameByUser.setRating(8);
+        ratingGameByUser.setId(1);
 
     }
 
@@ -411,26 +423,47 @@ public class UserControllerTests {
     @Test
     @WithMockUser(roles = "USER")
     public void deleteGameRatingShouldReturnNotFound_FirstParameter() throws Exception {
+        when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(-1, 1)).thenReturn(null);
+
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-1/delete-game-rating/1")).andDo(print()).andExpect(status().isNotFound());
+
+        verify(ratingGameByUserRepository, only()).findRatingGame_ByUserIdAndGameId(-1, 1);
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void deleteGameRatingShouldReturnNotFound_SecondParameter() throws Exception {
+        when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(1, -1)).thenReturn(null);
+
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game-rating/-1")).andDo(print()).andExpect(status().isNotFound());
+
+        verify(ratingGameByUserRepository, only()).findRatingGame_ByUserIdAndGameId(1, -1);
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void deleteGameRatingShouldReturnNotFound_BothParameters() throws Exception {
+        when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(-1, -1)).thenReturn(null);
+
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-1/delete-game-rating/-1")).andDo(print()).andExpect(status().isNotFound());
+
+        verify(ratingGameByUserRepository, only()).findRatingGame_ByUserIdAndGameId(-1, -1);
     }
 
     @Test
     @WithMockUser(roles = "USER")
-    @Order(deleteDataOrder)
     public void deleteGameRatingShouldReturnOk() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game-rating/1")).andDo(print()).andExpect(status().isOk());
+        when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(1, 1)).thenReturn(ratingGameByUser);
+        doNothing().when(ratingGameByUserRepository).delete(ratingGameByUser);
+
+        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game-rating/1")
+                .characterEncoding("UTF-8")).andDo(print()).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(1, 1);
+        verify(ratingGameByUserRepository).delete(ratingGameByUserArgumentCaptor.capture());
+
+        Assertions.assertEquals(ratingGameByUserArgumentCaptor.getValue().getId(), ratingGameByUser.getId());
+        Assertions.assertEquals(mvcResult, "Оценка с текущей игры удалена");
     }
 
     @Test

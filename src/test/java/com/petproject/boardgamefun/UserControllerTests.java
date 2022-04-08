@@ -14,9 +14,10 @@ import com.petproject.boardgamefun.model.*;
 import com.petproject.boardgamefun.repository.GameRepository;
 import com.petproject.boardgamefun.repository.RatingGameByUserRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
-import com.petproject.boardgamefun.security.model.JwtResponse;
+import com.petproject.boardgamefun.security.jwt.JwtUtils;
 import com.petproject.boardgamefun.security.model.LoginRequest;
-import com.petproject.boardgamefun.security.model.RefreshTokenRequest;
+import com.petproject.boardgamefun.security.services.RefreshTokenService;
+import com.petproject.boardgamefun.security.services.UserDetailsImpl;
 import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.UserService;
 import org.junit.jupiter.api.*;
@@ -32,6 +33,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -68,6 +73,21 @@ public class UserControllerTests {
 
     @MockBean
     private RatingGameByUserRepository ratingGameByUserRepository;
+
+    @MockBean
+    private RefreshTokenService refreshTokenService;
+
+    @MockBean
+    private AuthenticationManager authenticationManager;
+
+    @MockBean
+    private Authentication authentication;
+
+    @MockBean
+    private JwtUtils jwtUtils;
+
+    @MockBean
+    private UserDetailsImpl userDetails;
 
     private List<UserDTO> usersDTO;
     private UserDTO userDTO;
@@ -106,6 +126,9 @@ public class UserControllerTests {
     @Captor
     ArgumentCaptor<RatingGameByUser> ratingGameByUserArgumentCaptor;
 
+    @Captor
+    ArgumentCaptor<String> stringArgumentCaptor;
+
     ObjectMapper objectMapper;
 
     User admin;
@@ -135,7 +158,7 @@ public class UserControllerTests {
         user = new User();
         user.setId(34);
         user.setName("Bobby");
-        user.setPassword("pswdbobby");
+        user.setPassword("1234qwer");
         user.setRole("USER");
         user.setMail("bobby@ggogle.com");
         user.setRating(1.0);
@@ -243,12 +266,29 @@ public class UserControllerTests {
         Assertions.assertEquals(userResponse.length, 0);
     }
 
-    /*@Test
+    @Test
+    @WithMockUser(roles = "USER")
     public void authenticateUserShouldReturnOk() throws Exception {
-        LoginRequest loginRequest = new LoginRequest("Admin", "123qweAdmin");
+        LoginRequest loginRequest = new LoginRequest(user.getName(), user.getPassword());
+
+        when(userRepository.existsByName(user.getName())).thenReturn(true);
+        when(authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getName(), user.getPassword()))).thenReturn(authentication);
+        when(userRepository.findUserByName(user.getName())).thenReturn(user);
+        when(refreshTokenService.createRefreshToken(user.getName())).thenReturn("token");
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        when(jwtUtils.generateJwtToken(authentication)).thenReturn("124");
+        when(userDetails.getId()).thenReturn(user.getId());
+        when(userDetails.getUsername()).thenReturn(user.getName());
+        when(userDetails.getEmail()).thenReturn(user.getMail());
+
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isOk());
+
+        verify(userRepository).existsByName(user.getName());
+        verify(refreshTokenService).createRefreshToken(stringArgumentCaptor.capture());
+        Assertions.assertEquals(stringArgumentCaptor.getValue(), user.getName());
     }
 
     @Test
@@ -263,6 +303,7 @@ public class UserControllerTests {
     @Test
     public void authenticateUserShouldReturnNotFound() throws Exception {
         LoginRequest loginRequest = new LoginRequest("-1Admin", "123qweAdmin");
+        when(userRepository.existsByName(user.getName())).thenReturn(false);
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -271,7 +312,16 @@ public class UserControllerTests {
 
     @Test
     public void authenticateUserShouldReturnNotAuthorized() throws Exception {
-        LoginRequest loginRequest = new LoginRequest("Admin", "qweAdmin");
+        LoginRequest loginRequest = new LoginRequest(user.getName(), user.getPassword());
+
+        when(userRepository.existsByName(user.getName())).thenReturn(true);
+        when(authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getName(), user.getPassword()))).thenThrow(new AuthenticationException("auth failed") {
+            @Override
+            public String getMessage() {
+                return super.getMessage();
+            }
+        });
+
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -286,7 +336,7 @@ public class UserControllerTests {
                 .andExpect(status().isBadRequest());
     }
 
-    @Test
+   /* @Test
     public void refreshTokenShouldReturnNotAuthorizedBadAccessToken() throws Exception {
         RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest("Admin", "bla-bla");
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/refresh-token")
@@ -294,9 +344,8 @@ public class UserControllerTests {
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(refreshTokenRequest)))
                 .andExpect(status().isUnauthorized());
-    }*/
 
- /*   @Test
+    @Test
     public void refreshTokenShouldReturnIsOk() throws Exception {
 
         LoginRequest loginRequest = new LoginRequest("Admin", "123qweAdmin");

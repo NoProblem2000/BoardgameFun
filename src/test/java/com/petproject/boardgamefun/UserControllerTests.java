@@ -14,8 +14,11 @@ import com.petproject.boardgamefun.model.*;
 import com.petproject.boardgamefun.repository.GameRepository;
 import com.petproject.boardgamefun.repository.RatingGameByUserRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
+import com.petproject.boardgamefun.security.exception.RefreshTokenException;
 import com.petproject.boardgamefun.security.jwt.JwtUtils;
 import com.petproject.boardgamefun.security.model.LoginRequest;
+import com.petproject.boardgamefun.security.model.RefreshTokenRequest;
+import com.petproject.boardgamefun.security.model.RefreshTokenResponse;
 import com.petproject.boardgamefun.security.services.RefreshTokenService;
 import com.petproject.boardgamefun.security.services.UserDetailsImpl;
 import com.petproject.boardgamefun.service.GameService;
@@ -336,32 +339,37 @@ public class UserControllerTests {
                 .andExpect(status().isBadRequest());
     }
 
-   /* @Test
+    @Test
     public void refreshTokenShouldReturnNotAuthorizedBadAccessToken() throws Exception {
         RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest("Admin", "bla-bla");
+        when(refreshTokenService.verifyExpiration(refreshTokenRequest.getRefreshToken())).thenReturn(false);
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/refresh-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(refreshTokenRequest)))
                 .andExpect(status().isUnauthorized());
+        verify(refreshTokenService, only()).verifyExpiration(refreshTokenRequest.getRefreshToken());
+    }
 
     @Test
     public void refreshTokenShouldReturnIsOk() throws Exception {
+        RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest("Admin", "bla-bla");
 
-        LoginRequest loginRequest = new LoginRequest("Admin", "123qweAdmin");
-        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in").contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isOk()).andReturn();
+        when(refreshTokenService.verifyExpiration(refreshTokenRequest.getRefreshToken())).thenReturn(true);
+        when(jwtUtils.generateJwtToken(refreshTokenRequest.getUserName())).thenReturn("new token");
 
-        JwtResponse jwtResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), JwtResponse.class);
-
-        RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest(jwtResponse.getUserName(), jwtResponse.getRefreshToken());
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/refresh-token")
+        var response = this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/refresh-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(refreshTokenRequest)))
-                .andExpect(status().isOk());
-    }*/
+                .andExpect(status().isOk()).andReturn();
+
+        RefreshTokenResponse refreshTokenResponse = objectMapper.readValue(response.getResponse().getContentAsByteArray(), RefreshTokenResponse.class);
+
+        verify(refreshTokenService, only()).verifyExpiration(refreshTokenRequest.getRefreshToken());
+        verify(jwtUtils, only()).generateJwtToken(refreshTokenRequest.getUserName());
+        Assertions.assertEquals(refreshTokenResponse.getAccessToken(),"new token");
+    }
 
     @Test
     public void getUserShouldReturnStatusOkTest() throws Exception {

@@ -304,9 +304,6 @@ public class UserController {
         ratingGameByUser.setRating(rating);
         ratingGameByUserRepository.save(ratingGameByUser);
 
-
-        ratingGameByUserRepository.save(ratingGameByUser);
-
         return new ResponseEntity<>(rating, HttpStatus.OK);
     }
 

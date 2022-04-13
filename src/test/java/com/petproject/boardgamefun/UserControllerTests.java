@@ -609,11 +609,21 @@ public class UserControllerTests {
         verify(gameRepository).findGameById(-1);
     }
 
-    /*@Test
+    @Test
     @WithMockUser(roles = "USER")
-    @Order(updateDataOrder)
     public void updateGameRatingShouldReturnOk() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/update-game-rating/1/10")).andDo(print()).andExpect(status().isOk());
+
+        when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(1, 1)).thenReturn(ratingGameByUser);
+        when(ratingGameByUserRepository.save(ratingGameByUser)).thenReturn(null);
+
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/update-game-rating/1/10"))
+                .andDo(print()).andExpect(status().isOk()).andReturn();
+
+        var rating = objectMapper.readValue(result.getResponse().getContentAsByteArray(), Integer.class);
+
+        verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(1, 1);
+        verify(ratingGameByUserRepository).save(ratingGameByUser);
+        Assertions.assertEquals(ratingGameByUser.getRating(), rating);
     }
 
     @Test
@@ -631,22 +641,37 @@ public class UserControllerTests {
     @Test
     @WithMockUser(roles = "USER")
     public void updateGameRatingShouldReturnNotFound_FirstParameter() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/update-game-rating/1/1")).andDo(print()).andExpect(status().isNotFound());
+        when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(-1, 1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/update-game-rating/1/1"))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(-1, 1);
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void updateGameRatingShouldReturnNotFound_SecondParameter() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/update-game-rating/-1/1")).andDo(print()).andExpect(status().isNotFound());
+        when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(1, -1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/update-game-rating/-1/1"))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(1, -1);
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void updateGameRatingShouldReturnNotFound_BothParameters() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/update-game-rating/-1/1")).andDo(print()).andExpect(status().isNotFound());
+        when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(-1, -1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/update-game-rating/-1/1"))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(-1, -1);
     }
 
-    @Test
+    /*@Test
     @WithMockUser(roles = "USER")
     @Order(insertDataOrder)
     public void addGameToUserShouldReturnOk() throws Exception {

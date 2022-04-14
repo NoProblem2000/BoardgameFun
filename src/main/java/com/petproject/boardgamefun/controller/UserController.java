@@ -208,7 +208,7 @@ public class UserController {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
 
         var games = gameRepository.findUserGames(userId);
-        if (games.stream().anyMatch(g -> g.getId().equals(gameId))) {
+        if (games.size() != 0 && games.stream().anyMatch(g -> g.getId().equals(gameId))) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
 

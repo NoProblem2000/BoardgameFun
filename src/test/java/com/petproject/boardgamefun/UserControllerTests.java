@@ -13,8 +13,8 @@ import com.petproject.boardgamefun.model.*;
 
 import com.petproject.boardgamefun.repository.GameRepository;
 import com.petproject.boardgamefun.repository.RatingGameByUserRepository;
+import com.petproject.boardgamefun.repository.UserOwnGameRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
-import com.petproject.boardgamefun.security.exception.RefreshTokenException;
 import com.petproject.boardgamefun.security.jwt.JwtUtils;
 import com.petproject.boardgamefun.security.model.LoginRequest;
 import com.petproject.boardgamefun.security.model.RefreshTokenRequest;
@@ -92,6 +92,9 @@ public class UserControllerTests {
     @MockBean
     private UserDetailsImpl userDetails;
 
+    @MockBean
+    private UserOwnGameRepository userOwnGameRepository;
+
     private List<UserDTO> usersDTO;
     private UserDTO userDTO;
     private User userAdmin;
@@ -106,6 +109,7 @@ public class UserControllerTests {
     private Designer designer;
     private DesignerDTO designerDTO;
     private RatingGameByUser ratingGameByUser;
+    private UserOwnGame userOwnGame;
 
     @Autowired
     private MockMvc mockMvc;
@@ -239,6 +243,10 @@ public class UserControllerTests {
         ratingGameByUser.setUser(user);
         ratingGameByUser.setGame(game);
         ratingGameByUser.setRating(10);
+
+        userOwnGame = new UserOwnGame();
+        userOwnGame.setUser(user);
+        userOwnGame.setGame(game);
     }
 
     @Test
@@ -671,36 +679,78 @@ public class UserControllerTests {
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(-1, -1);
     }
 
-    /*@Test
+    @Test
     @WithMockUser(roles = "USER")
-    @Order(insertDataOrder)
     public void addGameToUserShouldReturnOk() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/1")).andDo(print()).andExpect(status().isOk());
+
+        when(userRepository.findUserById(1)).thenReturn(user);
+        when(gameRepository.findGameById(1)).thenReturn(game);
+        when(gameRepository.findUserGames(1)).thenReturn(new ArrayList<>());
+        when(userOwnGameRepository.save(any(UserOwnGame.class))).thenReturn(userOwnGame);
+
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/1"))
+                .andDo(print()).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        verify(userRepository).findUserById(1);
+        verify(gameRepository).findGameById(1);
+        verify(gameRepository).findUserGames(1);
+        verify(userOwnGameRepository).save(any(UserOwnGame.class));
+
+        Assertions.assertNotEquals(0, result.length());
     }
 
     @Test
     @WithMockUser(roles = "USER")
-    @Order(checkOnDuplicate)
     public void addGameToUserShouldReturnBadRequest() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/1")).andDo(print()).andExpect(status().isBadRequest());
+        when(userRepository.findUserById(1)).thenReturn(user);
+        when(gameRepository.findGameById(1)).thenReturn(game);
+        when(gameRepository.findUserGames(1)).thenReturn(games);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/1"))
+                .andDo(print()).andExpect(status().isBadRequest());
+
+        verify(userRepository).findUserById(1);
+        verify(gameRepository).findGameById(1);
+        verify(gameRepository).findUserGames(1);
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void addGameToUserShouldReturnStatusNotFound_FirstParameter() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-11/add-game/1")).andDo(print()).andExpect(status().isNotFound());
+        when(userRepository.findUserById(-1)).thenReturn(null);
+        when(gameRepository.findGameById(1)).thenReturn(game);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/add-game/1"))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(userRepository).findUserById(-1);
+        verify(gameRepository).findGameById(1);
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void addGameToUserShouldReturnStatusNotFound_SecondParameter() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/-1")).andDo(print()).andExpect(status().isNotFound());
+        when(userRepository.findUserById(1)).thenReturn(user);
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/-1"))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(userRepository).findUserById(1);
+        verify(gameRepository).findGameById(-1);
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void addGameToUserShouldReturnStatusNotFound_BothParameters() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/add-game/-1")).andDo(print()).andExpect(status().isNotFound());
+        when(userRepository.findUserById(-1)).thenReturn(null);
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/add-game/-1"))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(userRepository).findUserById(-1);
+        verify(gameRepository).findGameById(-1);
     }
 
     @Test
@@ -721,7 +771,7 @@ public class UserControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/bla/add-game/bla")).andDo(print()).andExpect(status().isBadRequest());
     }
 
-    @Test
+    /*@Test
     @WithMockUser(roles = "USER")
     public void deleteGameFromUserCollectionShouldReturnNotFound_FirstParameter() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-1/delete-game/1")).andDo(print()).andExpect(status().isNotFound());

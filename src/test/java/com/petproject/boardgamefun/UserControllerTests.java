@@ -771,22 +771,37 @@ public class UserControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/bla/add-game/bla")).andDo(print()).andExpect(status().isBadRequest());
     }
 
-    /*@Test
+    @Test
     @WithMockUser(roles = "USER")
     public void deleteGameFromUserCollectionShouldReturnNotFound_FirstParameter() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-1/delete-game/1")).andDo(print()).andExpect(status().isNotFound());
+        when(userOwnGameRepository.findUserOwnGame_ByUserIdAndGameId(-1, 1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-1/delete-game/1"))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(userOwnGameRepository).findUserOwnGame_ByUserIdAndGameId(-1, 1);
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void deleteGameFromUserCollectionShouldReturnNotFound_SecondParameter() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game/-1")).andDo(print()).andExpect(status().isNotFound());
+        when(userOwnGameRepository.findUserOwnGame_ByUserIdAndGameId(1, -1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game/-1"))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(userOwnGameRepository).findUserOwnGame_ByUserIdAndGameId(1, -1);
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void deleteGameFromUserCollectionShouldReturnNotFound_BothParameters() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-11/delete-game/-11")).andDo(print()).andExpect(status().isNotFound());
+        when(userOwnGameRepository.findUserOwnGame_ByUserIdAndGameId(-1, -1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-1/delete-game/-1"))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(userOwnGameRepository).findUserOwnGame_ByUserIdAndGameId(-1, -1);
     }
 
     @Test
@@ -809,12 +824,18 @@ public class UserControllerTests {
 
     @Test
     @WithMockUser(roles = "USER")
-    @Order(deleteDataOrder)
     public void deleteGameFromUserCollectionShouldReturnOk() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game/1")).andDo(print()).andExpect(status().isOk());
+        when(userOwnGameRepository.findUserOwnGame_ByUserIdAndGameId(1, 1)).thenReturn(userOwnGame);
+        doNothing().when(userOwnGameRepository).delete(userOwnGame);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game/1"))
+                .andDo(print()).andExpect(status().isOk());
+
+        verify(userOwnGameRepository).findUserOwnGame_ByUserIdAndGameId(1, 1);
+        verify(userOwnGameRepository).delete(userOwnGame);
     }
 
-    @Test
+    /*@Test
     @WithMockUser(roles = "USER")
     public void getUserWishlistShouldReturnIsOk() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/wishlist")).andExpect(status().isOk());

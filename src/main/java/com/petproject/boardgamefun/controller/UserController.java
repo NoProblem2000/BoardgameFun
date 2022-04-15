@@ -226,7 +226,7 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<Integer> deleteGameFromUserCollection(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
-        var userOwnGame = userOwnGameRepository.findUserOwnGame_ByGameIdAndUserId(gameId, userId);
+        var userOwnGame = userOwnGameRepository.findUserOwnGame_ByUserIdAndGameId(userId, gameId);
 
         if (userOwnGame == null)
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);

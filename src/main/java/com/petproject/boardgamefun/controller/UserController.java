@@ -321,7 +321,7 @@ public class UserController {
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
 
-        if (userWishRepository.findByGameAndUser(game, user) != null) {
+        if (userWishRepository.findByUserAndGame(user, game) != null) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
 
@@ -346,7 +346,7 @@ public class UserController {
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
 
-        var userWish = userWishRepository.findByGameAndUser(game, user);
+        var userWish = userWishRepository.findByUserAndGame(user, game);
 
         userWishRepository.delete(userWish);
 

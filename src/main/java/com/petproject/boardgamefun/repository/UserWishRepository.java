@@ -6,5 +6,5 @@ import com.petproject.boardgamefun.model.UserWish;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserWishRepository extends JpaRepository<UserWish, Integer> {
-    UserWish findByGameAndUser(Game game, User user);
+    UserWish findByUserAndGame(User user, Game game);
 }

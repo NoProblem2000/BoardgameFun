@@ -835,18 +835,35 @@ public class UserControllerTests {
         verify(userOwnGameRepository).delete(userOwnGame);
     }
 
-    /*@Test
+    @Test
     @WithMockUser(roles = "USER")
     public void getUserWishlistShouldReturnIsOk() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/wishlist")).andExpect(status().isOk());
+        when(gameRepository.findUserWishlist(1)).thenReturn(games);
+        when(gameService.entitiesToGameDTO(games)).thenReturn(gamesDTO);
+
+        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/wishlist"))
+                .andExpect(status().isOk()).andReturn();
+
+        var response = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+
+        verify(gameRepository).findUserWishlist(1);
+        verify(gameService).entitiesToGameDTO(gameListArgumentCaptor.capture());
+
+        Assertions.assertEquals(response.length, gamesDTO.size());
+        Assertions.assertEquals(response[0].getGame().getId(), gamesDTO.get(0).getGame().getId());
+        Assertions.assertEquals(response[0].getRating(), gamesDTO.get(0).getRating());
+        Assertions.assertEquals(gameListArgumentCaptor.getValue().size(), games.size());
+
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void getUserWishlistShouldReturnBlankArray() throws Exception {
-        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/-1/wishlist")).andExpect(status().isOk()).andReturn();
-        var gameDTOS = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
-        Assertions.assertEquals(0, gameDTOS.length);
+        when(gameRepository.findUserWishlist(-1)).thenReturn(new ArrayList<>());
+        when(gameService.entitiesToGameDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
+        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/-1/wishlist")).andExpect(status().isOk()).andReturn();
+        var response = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+        Assertions.assertEquals(0, response.length);
     }
 
     @Test
@@ -855,7 +872,7 @@ public class UserControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/bla/wishlist")).andExpect(status().isBadRequest());
     }
 
-    @Test
+    /*@Test
     @WithMockUser(roles = "USER")
     @Order(insertDataOrder)
     public void addGameToUserWishlistShouldReturnOk() throws Exception {

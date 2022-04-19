@@ -339,18 +339,18 @@ public class UserController {
     }
 
     @Transactional
-    @DeleteMapping("{userId}/delete-game-from-wishlist/{gameId}")
+    @DeleteMapping("delete-game-from-wishlist/{userWishId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<?> deleteGameFromUserWishlist(@PathVariable Integer userId, @PathVariable Integer gameId) {
+    public ResponseEntity<?> deleteGameFromUserWishlist(@PathVariable Integer userWishId) {
 
-        var user = userRepository.findUserById(userId);
-        var game = gameRepository.findGameById(gameId);
+        var userWish = userWishRepository.findById(userWishId);
 
-        var userWish = userWishRepository.findByUserAndGame(user, game);
+        if (userWish.isEmpty()) {
+            return new ResponseEntity<>(false, HttpStatus.NOT_FOUND);
+        }
+        userWishRepository.delete(userWish.get());
 
-        userWishRepository.delete(userWish);
-
-        return new ResponseEntity<>(game.getTitle() + " удалена из вашего списка желаемого", HttpStatus.OK);
+        return new ResponseEntity<>(true, HttpStatus.OK);
     }
 
     @Transactional

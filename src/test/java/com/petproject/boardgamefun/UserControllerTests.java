@@ -20,6 +20,7 @@ import com.petproject.boardgamefun.security.services.RefreshTokenService;
 import com.petproject.boardgamefun.security.services.UserDetailsImpl;
 import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.UserService;
+import net.bytebuddy.dynamic.DynamicType;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -45,6 +46,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -969,11 +971,46 @@ public class UserControllerTests {
     public void addGameToUserWishlistShouldReturnStatusBadRequest_BothParameters() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/bla/add-game-to-wishlist/bla")).andDo(print()).andExpect(status().isBadRequest());
     }
-/*
+
     @Test
     @WithMockUser(roles = "USER")
-    @Order(deleteDataOrder)
     public void deleteGameFromUserWishlistShouldReturnOk() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game-from-wishlist/1")).andDo(print()).andExpect(status().isOk());
-    }*/
+        when(userWishRepository.findById(1)).thenReturn(java.util.Optional.ofNullable(userWish));
+        doNothing().when(userWishRepository).delete(userWish);
+
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/delete-game-from-wishlist/1"))
+                .andDo(print()).andExpect(status().isOk()).andReturn();
+
+        var response = objectMapper.readValue(result.getResponse().getContentAsByteArray(), boolean.class);
+
+        verify(userWishRepository).findById(1);
+        verify(userWishRepository).delete(userWish);
+
+        Assertions.assertEquals(true, response);
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteGameFromUserWishlistShouldReturnNotFound() throws Exception {
+        when(userWishRepository.findById(1)).thenReturn(Optional.empty());
+
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/delete-game-from-wishlist/1"))
+                .andDo(print()).andExpect(status().isNotFound()).andReturn();
+
+        var response = objectMapper.readValue(result.getResponse().getContentAsByteArray(), boolean.class);
+
+        verify(userWishRepository).findById(1);
+
+        Assertions.assertEquals(false, response);
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteGameFromUserWishlistShouldReturnBadRequest() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/delete-game-from-wishlist/bla-bla"))
+                .andDo(print()).andExpect(status().isBadRequest());
+
+    }
 }

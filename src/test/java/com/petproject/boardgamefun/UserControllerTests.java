@@ -7,7 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.GameDTO;
+import com.petproject.boardgamefun.dto.GameSellDTO;
 import com.petproject.boardgamefun.dto.UserDTO;
+import com.petproject.boardgamefun.dto.projection.GameSellProjection;
 import com.petproject.boardgamefun.dto.projection.UserGameRatingProjection;
 import com.petproject.boardgamefun.model.*;
 
@@ -18,9 +20,9 @@ import com.petproject.boardgamefun.security.model.RefreshTokenRequest;
 import com.petproject.boardgamefun.security.model.RefreshTokenResponse;
 import com.petproject.boardgamefun.security.services.RefreshTokenService;
 import com.petproject.boardgamefun.security.services.UserDetailsImpl;
+import com.petproject.boardgamefun.service.GameSellService;
 import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.UserService;
-import net.bytebuddy.dynamic.DynamicType;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -97,6 +99,12 @@ public class UserControllerTests {
     @MockBean
     private UserWishRepository userWishRepository;
 
+    @MockBean
+    private GameSellRepository gameSellRepository;
+
+    @MockBean
+    private GameSellService gameSellService;
+
     private List<UserDTO> usersDTO;
     private UserDTO userDTO;
     private User userAdmin;
@@ -113,6 +121,10 @@ public class UserControllerTests {
     private RatingGameByUser ratingGameByUser;
     private UserOwnGame userOwnGame;
     private UserWish userWish;
+    private List<GameSellProjection> gameSellProjectionList;
+    private List<GameSellDTO> gameSellDTOList;
+    private GameSellDTO gameSellDTO;
+    private GameSell gameSell;
 
     @Autowired
     private MockMvc mockMvc;
@@ -255,6 +267,28 @@ public class UserControllerTests {
         userWish.setUser(user);
         userWish.setGame(game);
         userWish.setId(1);
+
+        gameSell = new GameSell();
+        gameSell.setGame(game);
+        gameSell.setCondition("good");
+        gameSell.setComment("so good");
+        gameSell.setPrice(100);
+        gameSell.setUser(user);
+
+        gameSellProjectionList = new ArrayList<>();
+        gameSellProjectionList.add(new GameSellPOJO(game, "good", "so good", 100));
+        gameSellProjectionList.add(new GameSellPOJO(game1, "excellent", "not open", 300));
+
+        gameSellDTO = new GameSellDTO();
+        gameSellDTO.setGame(game);
+        gameSellDTO.setCondition("good");
+        gameSellDTO.setComment("so good");
+        gameSellDTO.setPrice(100);
+
+        gameSellDTOList = new ArrayList<>();
+        gameSellDTOList.add(gameSellDTO);
+        gameSellDTOList.add(new GameSellDTO(game1, "excellent", "not open", 300));
+
     }
 
     @Test
@@ -1012,5 +1046,69 @@ public class UserControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/delete-game-from-wishlist/bla-bla"))
                 .andDo(print()).andExpect(status().isBadRequest());
 
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addGameToSellListShouldReturnBadRequest_Duplicates() throws Exception {
+
+        gameSell.setId(1);
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-sell/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(gameSell)))
+                .andDo(print()).andExpect(status().isBadRequest());
+        gameSell.setId(null);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addGameToSellListShouldReturnNotFound_FirstParameter() throws Exception {
+
+        when(userRepository.findUserById(-1)).thenReturn(null);
+        when(gameRepository.findGameById(1)).thenReturn(game);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/add-game-to-sell/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(gameSell)))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(userRepository).findUserById(-1);
+        verify(gameRepository).findGameById(1);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addGameToSellListShouldReturnNotFound_SecondParameter() throws Exception {
+
+        when(userRepository.findUserById(1)).thenReturn(user);
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-sell/-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(gameSell)))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(userRepository).findUserById(1);
+        verify(gameRepository).findGameById(-1);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addGameToSellListShouldReturnNotFound_BothParameters() throws Exception {
+
+        when(userRepository.findUserById(-1)).thenReturn(null);
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/add-game-to-sell/-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(gameSell)))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(userRepository).findUserById(-1);
+        verify(gameRepository).findGameById(-1);
     }
 }

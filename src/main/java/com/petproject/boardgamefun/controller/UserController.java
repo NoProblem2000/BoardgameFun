@@ -358,8 +358,16 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<GameSellDTO>> addGameToSellList(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody GameSell gameSell) {
 
+        if (gameSell.getId() != null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
+
+        if (game == null || user == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
 
         gameSell.setGame(game);
         gameSell.setUser(user);

@@ -61,7 +61,7 @@ import java.util.Optional;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class UserControllerTests {
 
-    private final String Gateway = "users";
+    private final String Gateway = "/users";
 
     @MockBean
     private UserRepository userRepository;
@@ -296,7 +296,7 @@ public class UserControllerTests {
         when(userRepository.findAll()).thenReturn(users);
         when(userService.entitiesToUserDTO(users)).thenReturn(usersDTO);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway)).andDo(print()).andExpect(status().isOk());
+        this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway)).andDo(print()).andExpect(status().isOk());
 
 
         verify(userRepository, only()).findAll();
@@ -309,7 +309,7 @@ public class UserControllerTests {
         when(userRepository.findAll()).thenReturn(null);
         when(userService.entitiesToUserDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
 
-        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway)).andDo(print()).andExpect(status().isOk()).andReturn();
+        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway)).andDo(print()).andExpect(status().isOk()).andReturn();
         UserDTO[] userResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), UserDTO[].class);
         verify(userRepository, only()).findAll();
         verify(userService, only()).entitiesToUserDTO(userListArgumentCaptor.capture());
@@ -333,7 +333,7 @@ public class UserControllerTests {
         when(userDetails.getUsername()).thenReturn(user.getName());
         when(userDetails.getEmail()).thenReturn(user.getMail());
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in").contentType(MediaType.APPLICATION_JSON)
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-in").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isOk());
 
@@ -345,7 +345,7 @@ public class UserControllerTests {
     @Test
     public void authenticateUserShouldReturn415() throws Exception {
         LoginRequest loginRequest = new LoginRequest("Admin", "123qweAdmin");
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-in")
                 .contentType(MediaType.APPLICATION_XML)
                 .accept(MediaType.APPLICATION_XML)
                 .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isUnsupportedMediaType());
@@ -355,7 +355,7 @@ public class UserControllerTests {
     public void authenticateUserShouldReturnNotFound() throws Exception {
         LoginRequest loginRequest = new LoginRequest("-1Admin", "123qweAdmin");
         when(userRepository.existsByName(user.getName())).thenReturn(false);
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-in")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isNotFound());
@@ -373,7 +373,7 @@ public class UserControllerTests {
             }
         });
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-in")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isUnauthorized());
@@ -381,7 +381,7 @@ public class UserControllerTests {
 
     @Test
     public void authenticateUserShouldReturnBadRequest() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/sign-in")
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-in")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
@@ -391,7 +391,7 @@ public class UserControllerTests {
     public void refreshTokenShouldReturnNotAuthorizedBadAccessToken() throws Exception {
         RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest("Admin", "bla-bla");
         when(refreshTokenService.verifyExpiration(refreshTokenRequest.getRefreshToken())).thenReturn(false);
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/refresh-token")
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/refresh-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(refreshTokenRequest)))
@@ -406,7 +406,7 @@ public class UserControllerTests {
         when(refreshTokenService.verifyExpiration(refreshTokenRequest.getRefreshToken())).thenReturn(true);
         when(jwtUtils.generateJwtToken(refreshTokenRequest.getUserName())).thenReturn("new token");
 
-        var response = this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/refresh-token")
+        var response = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/refresh-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(refreshTokenRequest)))
@@ -423,7 +423,7 @@ public class UserControllerTests {
     public void getUserShouldReturnStatusOkTest() throws Exception {
         when(userRepository.findUserById(1)).thenReturn(user);
         when(userService.entityToUserDTO(user)).thenReturn(userDTO);
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1")).andDo(print()).andExpect(status().isOk());
+        this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1")).andDo(print()).andExpect(status().isOk());
         verify(userRepository, only()).findUserById(1);
         verify(userService, only()).entityToUserDTO(userArgumentCaptor.capture());
         Assertions.assertEquals(userArgumentCaptor.getValue().getName(), userDTO.getUser().getName());
@@ -433,14 +433,14 @@ public class UserControllerTests {
     public void getUserShouldReturnStatusNotFound() throws Exception {
         when(userRepository.findUserById(-1)).thenReturn(null);
         when(userService.entityToUserDTO(null)).thenReturn(new UserDTO());
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/-1")).andDo(print()).andExpect(status().isNotFound());
+        this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1")).andDo(print()).andExpect(status().isNotFound());
         verify(userRepository, only()).findUserById(-1);
         verify(userService, only()).entityToUserDTO(null);
     }
 
     @Test
     public void getUserWhenBadPathValueReturn400() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/{userId}", "userId")).andExpect(status().isBadRequest());
+        mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/{userId}", "userId")).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -448,7 +448,7 @@ public class UserControllerTests {
 
         when(userRepository.findUserById(1)).thenReturn(user);
         when(userService.entityToUserDTO(user)).thenReturn(userDTO);
-        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/{userId}", "1")).andExpect(status().isOk()).andReturn();
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/{userId}", "1")).andExpect(status().isOk()).andReturn();
 
         UserDTO userResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), UserDTO.class);
 
@@ -468,7 +468,7 @@ public class UserControllerTests {
         when(gameRepository.findUserGames(1)).thenReturn(games);
         when(gameService.entitiesToGameDTO(games)).thenReturn(gamesDTO);
 
-        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/games")).andExpect(status().isOk()).andReturn();
+        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1/games")).andExpect(status().isOk()).andReturn();
         var userCollection = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
 
         verify(gameRepository, only()).findUserGames(1);
@@ -483,7 +483,7 @@ public class UserControllerTests {
     public void getUserCollectionShouldReturnBlankArray() throws Exception {
         when(gameRepository.findUserGames(-1)).thenReturn(null);
         when(gameService.entitiesToGameDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
-        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/-1/games")).andExpect(status().isOk()).andReturn();
+        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1/games")).andExpect(status().isOk()).andReturn();
         var gameDTOS = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
 
         verify(gameRepository, only()).findUserGames(-1);
@@ -499,7 +499,7 @@ public class UserControllerTests {
         when(gameRepository.findUserGameRatingList(1)).thenReturn(userGameRatingProjections);
         when(gameService.userGameRatingToGameDTO(userGameRatingProjections)).thenReturn(gamesDTO);
 
-        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/games-rating").characterEncoding("UTF-8"))
+        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1/games-rating").characterEncoding("UTF-8"))
                 .andExpect(status().isOk()).andReturn();
         var userRatingList = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
 
@@ -516,7 +516,7 @@ public class UserControllerTests {
         when(gameRepository.findUserGameRatingList(-1)).thenReturn(null);
         when(gameService.userGameRatingToGameDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
 
-        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/-1/games-rating")).andExpect(status().isOk()).andReturn();
+        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1/games-rating")).andExpect(status().isOk()).andReturn();
         var gameDTOS = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
 
         verify(gameRepository, only()).findUserGameRatingList(-1);
@@ -531,7 +531,7 @@ public class UserControllerTests {
     public void deleteGameRatingShouldReturnNotFound_FirstParameter() throws Exception {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(-1, 1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-1/delete-game-rating/1")).andDo(print()).andExpect(status().isNotFound());
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/-1/delete-game-rating/1")).andDo(print()).andExpect(status().isNotFound());
 
         verify(ratingGameByUserRepository, only()).findRatingGame_ByUserIdAndGameId(-1, 1);
     }
@@ -541,7 +541,7 @@ public class UserControllerTests {
     public void deleteGameRatingShouldReturnNotFound_SecondParameter() throws Exception {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(1, -1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game-rating/-1")).andDo(print()).andExpect(status().isNotFound());
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/1/delete-game-rating/-1")).andDo(print()).andExpect(status().isNotFound());
 
         verify(ratingGameByUserRepository, only()).findRatingGame_ByUserIdAndGameId(1, -1);
     }
@@ -551,7 +551,7 @@ public class UserControllerTests {
     public void deleteGameRatingShouldReturnNotFound_BothParameters() throws Exception {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(-1, -1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-1/delete-game-rating/-1")).andDo(print()).andExpect(status().isNotFound());
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/-1/delete-game-rating/-1")).andDo(print()).andExpect(status().isNotFound());
 
         verify(ratingGameByUserRepository, only()).findRatingGame_ByUserIdAndGameId(-1, -1);
     }
@@ -562,7 +562,7 @@ public class UserControllerTests {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(1, 1)).thenReturn(ratingGameByUser);
         doNothing().when(ratingGameByUserRepository).delete(ratingGameByUser);
 
-        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game-rating/1")
+        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/1/delete-game-rating/1")
                 .characterEncoding("UTF-8")).andDo(print()).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(1, 1);
@@ -580,7 +580,7 @@ public class UserControllerTests {
         when(gameRepository.findGameById(1)).thenReturn(game);
         when(ratingGameByUserRepository.save(any(RatingGameByUser.class))).thenReturn(null);
 
-        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/set-game-rating/1/10"))
+        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/set-game-rating/1/10"))
                 .andDo(print()).andExpect(status().isOk()).andReturn();
 
         var rating = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), Integer.class);
@@ -597,7 +597,7 @@ public class UserControllerTests {
     public void setGameRatingShouldReturnBadRequest() throws Exception {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(1, 1)).thenReturn(ratingGameByUser);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/set-game-rating/1/10")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/set-game-rating/1/10")).andDo(print()).andExpect(status().isBadRequest());
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(1, 1);
 
@@ -606,13 +606,13 @@ public class UserControllerTests {
     @Test
     @WithMockUser(roles = "USER")
     public void setGameRatingShouldReturnBadRequestLessThanNormal() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/set-game-rating/1/0")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/set-game-rating/1/0")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void setGameRatingShouldReturnBadRequestMoreThanNormal() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/set-game-rating/1/11")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/set-game-rating/1/11")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -622,7 +622,7 @@ public class UserControllerTests {
         when(userRepository.findUserById(-1)).thenReturn(null);
         when(gameRepository.findGameById(1)).thenReturn(game);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/set-game-rating/1/10")).andDo(print()).andExpect(status().isNotFound());
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/set-game-rating/1/10")).andDo(print()).andExpect(status().isNotFound());
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(-1, 1);
         verify(userRepository).findUserById(-1);
@@ -636,7 +636,7 @@ public class UserControllerTests {
         when(userRepository.findUserById(1)).thenReturn(user);
         when(gameRepository.findGameById(-1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/set-game-rating/-1/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/set-game-rating/-1/1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(1, -1);
@@ -651,7 +651,7 @@ public class UserControllerTests {
         when(userRepository.findUserById(-1)).thenReturn(null);
         when(gameRepository.findGameById(-1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/set-game-rating/-1/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/set-game-rating/-1/1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(-1, -1);
@@ -666,7 +666,7 @@ public class UserControllerTests {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(1, 1)).thenReturn(ratingGameByUser);
         when(ratingGameByUserRepository.save(ratingGameByUser)).thenReturn(null);
 
-        var result = this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/update-game-rating/1/10"))
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/update-game-rating/1/10"))
                 .andDo(print()).andExpect(status().isOk()).andReturn();
 
         var rating = objectMapper.readValue(result.getResponse().getContentAsByteArray(), Integer.class);
@@ -679,13 +679,13 @@ public class UserControllerTests {
     @Test
     @WithMockUser(roles = "USER")
     public void updateGameRatingShouldReturnBadRequestLessThanNormal() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/update-game-rating/1/0")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/update-game-rating/1/0")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void updateGameRatingShouldReturnBadRequestMoreThanNormal() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/update-game-rating/1/11")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/update-game-rating/1/11")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -693,7 +693,7 @@ public class UserControllerTests {
     public void updateGameRatingShouldReturnNotFound_FirstParameter() throws Exception {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(-1, 1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/update-game-rating/1/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/update-game-rating/1/1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(-1, 1);
@@ -704,7 +704,7 @@ public class UserControllerTests {
     public void updateGameRatingShouldReturnNotFound_SecondParameter() throws Exception {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(1, -1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/update-game-rating/-1/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/update-game-rating/-1/1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(1, -1);
@@ -715,7 +715,7 @@ public class UserControllerTests {
     public void updateGameRatingShouldReturnNotFound_BothParameters() throws Exception {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(-1, -1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/update-game-rating/-1/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/update-game-rating/-1/1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(-1, -1);
@@ -730,7 +730,7 @@ public class UserControllerTests {
         when(gameRepository.findUserGames(1)).thenReturn(new ArrayList<>());
         when(userOwnGameRepository.save(any(UserOwnGame.class))).thenReturn(userOwnGame);
 
-        var result = this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/1"))
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-game/1"))
                 .andDo(print()).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
         verify(userRepository).findUserById(1);
@@ -748,7 +748,7 @@ public class UserControllerTests {
         when(gameRepository.findGameById(1)).thenReturn(game);
         when(gameRepository.findUserGames(1)).thenReturn(games);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-game/1"))
                 .andDo(print()).andExpect(status().isBadRequest());
 
         verify(userRepository).findUserById(1);
@@ -762,7 +762,7 @@ public class UserControllerTests {
         when(userRepository.findUserById(-1)).thenReturn(null);
         when(gameRepository.findGameById(1)).thenReturn(game);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/add-game/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/add-game/1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(userRepository).findUserById(-1);
@@ -775,7 +775,7 @@ public class UserControllerTests {
         when(userRepository.findUserById(1)).thenReturn(user);
         when(gameRepository.findGameById(-1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/-1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-game/-1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(userRepository).findUserById(1);
@@ -788,7 +788,7 @@ public class UserControllerTests {
         when(userRepository.findUserById(-1)).thenReturn(null);
         when(gameRepository.findGameById(-1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/add-game/-1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/add-game/-1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(userRepository).findUserById(-1);
@@ -798,19 +798,19 @@ public class UserControllerTests {
     @Test
     @WithMockUser(roles = "USER")
     public void addGameToUserShouldReturnStatusBadRequest_FirstParameter() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/bla/add-game/1")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/bla/add-game/1")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void addGameToUserShouldReturnStatusBadRequest_SecondParameter() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game/bla")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-game/bla")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void addGameToUserShouldReturnStatusBadRequest_BothParameters() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/bla/add-game/bla")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/bla/add-game/bla")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -818,7 +818,7 @@ public class UserControllerTests {
     public void deleteGameFromUserCollectionShouldReturnNotFound_FirstParameter() throws Exception {
         when(userOwnGameRepository.findUserOwnGame_ByUserIdAndGameId(-1, 1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-1/delete-game/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/-1/delete-game/1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(userOwnGameRepository).findUserOwnGame_ByUserIdAndGameId(-1, 1);
@@ -829,7 +829,7 @@ public class UserControllerTests {
     public void deleteGameFromUserCollectionShouldReturnNotFound_SecondParameter() throws Exception {
         when(userOwnGameRepository.findUserOwnGame_ByUserIdAndGameId(1, -1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game/-1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/1/delete-game/-1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(userOwnGameRepository).findUserOwnGame_ByUserIdAndGameId(1, -1);
@@ -840,7 +840,7 @@ public class UserControllerTests {
     public void deleteGameFromUserCollectionShouldReturnNotFound_BothParameters() throws Exception {
         when(userOwnGameRepository.findUserOwnGame_ByUserIdAndGameId(-1, -1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/-1/delete-game/-1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/-1/delete-game/-1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(userOwnGameRepository).findUserOwnGame_ByUserIdAndGameId(-1, -1);
@@ -849,19 +849,19 @@ public class UserControllerTests {
     @Test
     @WithMockUser(roles = "USER")
     public void deleteGameFromUserCollectionShouldReturnBadRequest_FirstParameter() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/bla/delete-game/1")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/bla/delete-game/1")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void deleteGameFromUserCollectionShouldReturnBadRequest_SecondParameter() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game/bla")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/1/delete-game/bla")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void deleteGameFromUserCollectionShouldReturnBadRequest_BothParameters() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/bla/delete-game/bla")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/bla/delete-game/bla")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -870,7 +870,7 @@ public class UserControllerTests {
         when(userOwnGameRepository.findUserOwnGame_ByUserIdAndGameId(1, 1)).thenReturn(userOwnGame);
         doNothing().when(userOwnGameRepository).delete(userOwnGame);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/1/delete-game/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/1/delete-game/1"))
                 .andDo(print()).andExpect(status().isOk());
 
         verify(userOwnGameRepository).findUserOwnGame_ByUserIdAndGameId(1, 1);
@@ -883,7 +883,7 @@ public class UserControllerTests {
         when(gameRepository.findUserWishlist(1)).thenReturn(games);
         when(gameService.entitiesToGameDTO(games)).thenReturn(gamesDTO);
 
-        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/wishlist"))
+        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1/wishlist"))
                 .andExpect(status().isOk()).andReturn();
 
         var response = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
@@ -903,7 +903,7 @@ public class UserControllerTests {
     public void getUserWishlistShouldReturnBlankArray() throws Exception {
         when(gameRepository.findUserWishlist(-1)).thenReturn(new ArrayList<>());
         when(gameService.entitiesToGameDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
-        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/-1/wishlist")).andExpect(status().isOk()).andReturn();
+        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1/wishlist")).andExpect(status().isOk()).andReturn();
         var response = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
         Assertions.assertEquals(0, response.length);
     }
@@ -911,7 +911,7 @@ public class UserControllerTests {
     @Test
     @WithMockUser(roles = "USER")
     public void getUserWishlistShouldReturnBadRequest() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/bla/wishlist")).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/bla/wishlist")).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -922,7 +922,7 @@ public class UserControllerTests {
         when(userWishRepository.findByUserAndGame(user, game)).thenReturn(null);
         when(userWishRepository.save(any(UserWish.class))).thenReturn(userWish);
 
-        var response = this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-wishlist/1"))
+        var response = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-game-to-wishlist/1"))
                 .andDo(print()).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
         verify(userRepository).findUserById(1);
@@ -941,7 +941,7 @@ public class UserControllerTests {
         when(gameRepository.findGameById(1)).thenReturn(game);
         when(userWishRepository.findByUserAndGame(user, game)).thenReturn(userWish);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-wishlist/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-game-to-wishlist/1"))
                 .andDo(print()).andExpect(status().isBadRequest());
 
         verify(userRepository).findUserById(1);
@@ -955,7 +955,7 @@ public class UserControllerTests {
         when(userRepository.findUserById(-1)).thenReturn(null);
         when(gameRepository.findGameById(1)).thenReturn(game);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/add-game-to-wishlist/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/add-game-to-wishlist/1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(userRepository).findUserById(-1);
@@ -968,7 +968,7 @@ public class UserControllerTests {
         when(userRepository.findUserById(1)).thenReturn(user);
         when(gameRepository.findGameById(-1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-wishlist/-1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-game-to-wishlist/-1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         when(userRepository.findUserById(1)).thenReturn(user);
@@ -981,7 +981,7 @@ public class UserControllerTests {
         when(userRepository.findUserById(-1)).thenReturn(null);
         when(gameRepository.findGameById(-1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/add-game-to-wishlist/-1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/add-game-to-wishlist/-1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         when(userRepository.findUserById(-1)).thenReturn(user);
@@ -991,19 +991,19 @@ public class UserControllerTests {
     @Test
     @WithMockUser(roles = "USER")
     public void addGameToUserWishlistShouldReturnStatusBadRequest_FirstParameter() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/bla/add-game-to-wishlist/1")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/bla/add-game-to-wishlist/1")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void addGameToUserWishlistShouldReturnStatusBadRequest_SecondParameter() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-wishlist/bla")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-game-to-wishlist/bla")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void addGameToUserWishlistShouldReturnStatusBadRequest_BothParameters() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/bla/add-game-to-wishlist/bla")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/bla/add-game-to-wishlist/bla")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -1012,7 +1012,7 @@ public class UserControllerTests {
         when(userWishRepository.findById(1)).thenReturn(java.util.Optional.ofNullable(userWish));
         doNothing().when(userWishRepository).delete(userWish);
 
-        var result = this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/delete-game-from-wishlist/1"))
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-game-from-wishlist/1"))
                 .andDo(print()).andExpect(status().isOk()).andReturn();
 
         var response = objectMapper.readValue(result.getResponse().getContentAsByteArray(), boolean.class);
@@ -1029,7 +1029,7 @@ public class UserControllerTests {
     public void deleteGameFromUserWishlistShouldReturnNotFound() throws Exception {
         when(userWishRepository.findById(1)).thenReturn(Optional.empty());
 
-        var result = this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/delete-game-from-wishlist/1"))
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-game-from-wishlist/1"))
                 .andDo(print()).andExpect(status().isNotFound()).andReturn();
 
         var response = objectMapper.readValue(result.getResponse().getContentAsByteArray(), boolean.class);
@@ -1043,7 +1043,7 @@ public class UserControllerTests {
     @Test
     @WithMockUser(roles = "USER")
     public void deleteGameFromUserWishlistShouldReturnBadRequest() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.delete("/" + Gateway + "/delete-game-from-wishlist/bla-bla"))
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-game-from-wishlist/bla-bla"))
                 .andDo(print()).andExpect(status().isBadRequest());
 
     }
@@ -1058,7 +1058,7 @@ public class UserControllerTests {
         when(gameRepository.getGameSellList(1)).thenReturn(gameSellProjectionList);
         when(gameSellService.projectionsToGameSellDTO(gameSellProjectionList)).thenReturn(gameSellDTOList);
 
-        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-sell/1")
+        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-game-to-sell/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(gameSell)))
@@ -1081,7 +1081,7 @@ public class UserControllerTests {
     public void addGameToSellListShouldReturnBadRequest_Duplicates() throws Exception {
 
         gameSell.setId(1);
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-sell/1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-game-to-sell/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(gameSell)))
@@ -1096,7 +1096,7 @@ public class UserControllerTests {
         when(userRepository.findUserById(-1)).thenReturn(null);
         when(gameRepository.findGameById(1)).thenReturn(game);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/add-game-to-sell/1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/add-game-to-sell/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(gameSell)))
@@ -1113,7 +1113,7 @@ public class UserControllerTests {
         when(userRepository.findUserById(1)).thenReturn(user);
         when(gameRepository.findGameById(-1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-sell/-1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-game-to-sell/-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(gameSell)))
@@ -1130,7 +1130,7 @@ public class UserControllerTests {
         when(userRepository.findUserById(-1)).thenReturn(null);
         when(gameRepository.findGameById(-1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/-1/add-game-to-sell/-1")
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/add-game-to-sell/-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(gameSell)))
@@ -1146,7 +1146,7 @@ public class UserControllerTests {
         when(gameRepository.getGameSellList(1)).thenReturn(gameSellProjectionList);
         when(gameSellService.projectionsToGameSellDTO(gameSellProjectionList)).thenReturn(gameSellDTOList);
 
-        var result = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/games-to-sell"))
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1/games-to-sell"))
                 .andDo(print()).andExpect(status().isOk()).andReturn();
 
         var response = objectMapper.readValue(result.getResponse().getContentAsByteArray(), GameSellDTO[].class);
@@ -1165,7 +1165,7 @@ public class UserControllerTests {
         when(gameRepository.getGameSellList(1)).thenReturn(new ArrayList<>());
         when(gameSellService.projectionsToGameSellDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
 
-        var result = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/games-to-sell"))
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1/games-to-sell"))
                 .andDo(print()).andExpect(status().isOk()).andReturn();
 
         var response = objectMapper.readValue(result.getResponse().getContentAsByteArray(), GameSellDTO[].class);

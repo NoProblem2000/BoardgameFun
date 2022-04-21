@@ -1176,5 +1176,50 @@ public class UserControllerTests {
         Assertions.assertEquals(response.length, 0);
     }
 
+    @Test
+    @WithMockUser(roles = "USER")
+    public void removeGameFromSellShouldReturnOk() throws Exception {
+        when(gameSellRepository.findGameSell_ByUserIdAndGameId(1, 1)).thenReturn(gameSell);
+        doNothing().when(gameSellRepository).delete(gameSell);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/1/remove-game-from-sell/1"))
+                .andDo(print()).andExpect(status().isOk());
+
+        verify(gameSellRepository).findGameSell_ByUserIdAndGameId(1, 1);
+        verify(gameSellRepository).delete(gameSell);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void removeGameFromSellShouldReturnNotFound_FirstParameter() throws Exception {
+        when(gameSellRepository.findGameSell_ByUserIdAndGameId(-1, 1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/-1/remove-game-from-sell/1"))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(gameSellRepository).findGameSell_ByUserIdAndGameId(-1, 1);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void removeGameFromSellShouldReturnNotFound_SecondParameter() throws Exception {
+        when(gameSellRepository.findGameSell_ByUserIdAndGameId(1, -1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/1/remove-game-from-sell/-1"))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(gameSellRepository).findGameSell_ByUserIdAndGameId(1, -1);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void removeGameFromSellShouldReturnNotFound_BothParameters() throws Exception {
+        when(gameSellRepository.findGameSell_ByUserIdAndGameId(-1, -1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/-1/remove-game-from-sell/-1"))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(gameSellRepository).findGameSell_ByUserIdAndGameId(-1, -1);
+    }
 
 }

@@ -393,7 +393,10 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<Integer> removeGameFromSell(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
-        var gameSell = gameSellRepository.findGameSell_ByGameIdAndUserId(gameId, userId);
+        var gameSell = gameSellRepository.findGameSell_ByUserIdAndGameId(userId, gameId);
+        if (gameSell == null){
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
         gameSellRepository.delete(gameSell);
 
         return new ResponseEntity<>(gameId, HttpStatus.OK);

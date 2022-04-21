@@ -1050,6 +1050,34 @@ public class UserControllerTests {
 
     @Test
     @WithMockUser(roles = "USER")
+    public void addGameToSellListShouldReturnOk() throws Exception {
+
+        when(userRepository.findUserById(1)).thenReturn(user);
+        when(gameRepository.findGameById(1)).thenReturn(game);
+        when(gameSellRepository.save(any(GameSell.class))).thenReturn(null);
+        when(gameRepository.getGameSellList(1)).thenReturn(gameSellProjectionList);
+        when(gameSellService.projectionsToGameSellDTO(gameSellProjectionList)).thenReturn(gameSellDTOList);
+
+        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.post("/" + Gateway + "/1/add-game-to-sell/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(gameSell)))
+                .andDo(print()).andExpect(status().isOk()).andReturn();
+
+        var response = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameSellDTO[].class);
+
+        verify(userRepository).findUserById(1);
+        verify(gameRepository).findGameById(1);
+        verify(gameSellRepository).save(any(GameSell.class));
+        verify(gameRepository).getGameSellList(1);
+        verify(gameSellService).projectionsToGameSellDTO(gameSellProjectionList);
+
+        Assertions.assertEquals(response.length, gameSellDTOList.size());
+        Assertions.assertEquals(response[0].getGame().getId(), gameSellDTOList.get(0).getGame().getId());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
     public void addGameToSellListShouldReturnBadRequest_Duplicates() throws Exception {
 
         gameSell.setId(1);
@@ -1111,4 +1139,42 @@ public class UserControllerTests {
         verify(userRepository).findUserById(-1);
         verify(gameRepository).findGameById(-1);
     }
+
+    @Test
+    public void getGameSellListShouldReturnOk() throws Exception {
+
+        when(gameRepository.getGameSellList(1)).thenReturn(gameSellProjectionList);
+        when(gameSellService.projectionsToGameSellDTO(gameSellProjectionList)).thenReturn(gameSellDTOList);
+
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/games-to-sell"))
+                .andDo(print()).andExpect(status().isOk()).andReturn();
+
+        var response = objectMapper.readValue(result.getResponse().getContentAsByteArray(), GameSellDTO[].class);
+
+        verify(gameRepository).getGameSellList(1);
+        verify(gameSellService).projectionsToGameSellDTO(gameSellProjectionList);
+
+        Assertions.assertEquals(response.length, gameSellDTOList.size());
+        Assertions.assertEquals(response[0].getGame().getId(), gameSellDTOList.get(0).getGame().getId());
+
+    }
+
+    @Test
+    public void getGameSellListShouldReturnBlankArray() throws Exception {
+
+        when(gameRepository.getGameSellList(1)).thenReturn(new ArrayList<>());
+        when(gameSellService.projectionsToGameSellDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
+
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.get("/" + Gateway + "/1/games-to-sell"))
+                .andDo(print()).andExpect(status().isOk()).andReturn();
+
+        var response = objectMapper.readValue(result.getResponse().getContentAsByteArray(), GameSellDTO[].class);
+
+        verify(gameRepository).getGameSellList(1);
+        verify(gameSellService).projectionsToGameSellDTO(new ArrayList<>());
+
+        Assertions.assertEquals(response.length, 0);
+    }
+
+
 }

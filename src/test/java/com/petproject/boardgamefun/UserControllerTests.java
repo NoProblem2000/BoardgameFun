@@ -1222,4 +1222,68 @@ public class UserControllerTests {
         verify(gameSellRepository).findGameSell_ByUserIdAndGameId(-1, -1);
     }
 
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateSellGameShouldReturnOk() throws Exception {
+        when(gameSellRepository.save(any(GameSell.class))).thenReturn(null);
+        gameSell.setId(1);
+
+        var res = this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/update-game-to-sell")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(gameSell)))
+                .andDo(print()).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        verify(gameSellRepository).save(any(GameSell.class));
+
+        gameSell.setId(null);
+
+        Assertions.assertNotEquals(0, res.length());
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateSellGameShouldReturnBadRequest_IdIsNull() throws Exception {
+
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/update-game-to-sell")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(gameSell)))
+                .andDo(print()).andExpect(status().isBadRequest());
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateSellGameShouldReturnBadRequest_GameIsNull() throws Exception {
+
+        this.gameSell.setGame(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/update-game-to-sell")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(gameSell)))
+                .andDo(print()).andExpect(status().isBadRequest());
+
+        this.gameSell.setGame(game);
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateSellGameShouldReturnBadRequest_UserIsNull() throws Exception {
+
+        this.gameSell.setUser(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/update-game-to-sell")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(gameSell)))
+                .andDo(print()).andExpect(status().isBadRequest());
+
+        this.gameSell.setUser(user);
+
+    }
+
 }

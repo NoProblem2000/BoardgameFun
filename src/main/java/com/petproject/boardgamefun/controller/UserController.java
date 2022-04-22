@@ -394,7 +394,7 @@ public class UserController {
     public ResponseEntity<Integer> removeGameFromSell(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
         var gameSell = gameSellRepository.findGameSell_ByUserIdAndGameId(userId, gameId);
-        if (gameSell == null){
+        if (gameSell == null) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
         gameSellRepository.delete(gameSell);
@@ -406,6 +406,10 @@ public class UserController {
     @PutMapping("/update-game-to-sell")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> updateSellGame(@RequestBody GameSell gameSell) {
+
+        if (gameSell.getId() == null || gameSell.getGame() == null || gameSell.getUser() == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
 
         if (gameSell.getComment() != null) {
             gameSell.setComment(gameSell.getComment());

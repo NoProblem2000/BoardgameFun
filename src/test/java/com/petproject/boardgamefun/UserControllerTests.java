@@ -5,10 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.petproject.boardgamefun.dto.DesignerDTO;
-import com.petproject.boardgamefun.dto.GameDTO;
-import com.petproject.boardgamefun.dto.GameSellDTO;
-import com.petproject.boardgamefun.dto.UserDTO;
+import com.petproject.boardgamefun.dto.*;
 import com.petproject.boardgamefun.dto.projection.GameSellProjection;
 import com.petproject.boardgamefun.dto.projection.UserGameRatingProjection;
 import com.petproject.boardgamefun.model.*;
@@ -20,6 +17,7 @@ import com.petproject.boardgamefun.security.model.RefreshTokenRequest;
 import com.petproject.boardgamefun.security.model.RefreshTokenResponse;
 import com.petproject.boardgamefun.security.services.RefreshTokenService;
 import com.petproject.boardgamefun.security.services.UserDetailsImpl;
+import com.petproject.boardgamefun.service.DiaryService;
 import com.petproject.boardgamefun.service.GameSellService;
 import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.UserService;
@@ -105,6 +103,12 @@ public class UserControllerTests {
     @MockBean
     private GameSellService gameSellService;
 
+    @MockBean
+    private DiaryRepository diaryRepository;
+
+    @MockBean
+    private DiaryService diaryService;
+
     private List<UserDTO> usersDTO;
     private UserDTO userDTO;
     private User userAdmin;
@@ -125,6 +129,8 @@ public class UserControllerTests {
     private List<GameSellDTO> gameSellDTOList;
     private GameSellDTO gameSellDTO;
     private GameSell gameSell;
+    private Diary diary;
+    private DiaryDTO diaryDTO;
 
     @Autowired
     private MockMvc mockMvc;
@@ -289,6 +295,14 @@ public class UserControllerTests {
         gameSellDTOList.add(gameSellDTO);
         gameSellDTOList.add(new GameSellDTO(game1, "excellent", "not open", 300));
 
+        diary = new Diary();
+        diary.setGame(game);
+        diary.setUser(user);
+        diary.setTitle("let's talk about" + game.getTitle());
+        diary.setText("Not so good, but good");
+        diary.setPublicationTime(OffsetDateTime.now());
+
+        diaryDTO = new DiaryDTO(diary, 8.0);
     }
 
     @Test
@@ -1283,6 +1297,95 @@ public class UserControllerTests {
                 .andDo(print()).andExpect(status().isBadRequest());
 
         this.gameSell.setUser(user);
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addDiaryShouldReturnIsOk() throws Exception {
+        when(userRepository.findUserById(1)).thenReturn(user);
+        when(gameRepository.findGameById(1)).thenReturn(game);
+        when(diaryRepository.save(any(Diary.class))).thenReturn(diary);
+        when(diaryService.entityToDiaryDTO(any(Diary.class))).thenReturn(diaryDTO);
+
+
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-diary/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(diary)))
+                .andDo(print()).andExpect(status().isOk()).andReturn();
+
+        var response = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), DiaryDTO.class);
+
+        verify(userRepository).findUserById(1);
+        verify(gameRepository).findGameById(1);
+        verify(diaryRepository).save(any(Diary.class));
+        verify(diaryService).entityToDiaryDTO(any(Diary.class));
+
+        Assertions.assertEquals(diaryDTO.getDiary().getId(), response.getDiary().getId());
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addDiaryShouldReturnNotFound_FirstParameter() throws Exception {
+        when(userRepository.findUserById(-1)).thenReturn(null);
+        when(gameRepository.findGameById(1)).thenReturn(game);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/add-diary/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(diary)))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(userRepository).findUserById(-1);
+        verify(gameRepository).findGameById(1);
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addDiaryShouldReturnNotFound_SecondParameter() throws Exception {
+        when(userRepository.findUserById(1)).thenReturn(user);
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-diary/-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(diary)))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(userRepository).findUserById(1);
+        verify(gameRepository).findGameById(-1);
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addDiaryShouldReturnNotFound_BothParameters() throws Exception {
+        when(userRepository.findUserById(-1)).thenReturn(null);
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/add-diary/-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(diary)))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(userRepository).findUserById(-1);
+        verify(gameRepository).findGameById(-1);
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addDiaryShouldReturnBadRequest_InvalidInput() throws Exception {
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/add-diary/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(null)))
+                .andDo(print()).andExpect(status().isBadRequest());
 
     }
 

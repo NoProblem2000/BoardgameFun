@@ -431,8 +431,16 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<DiaryDTO> addDiary(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody Diary diary) {
 
+        if (diary == null || diary.getGame() == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
+
+        if (game == null || user == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
 
         diary.setUser(user);
         diary.setGame(game);

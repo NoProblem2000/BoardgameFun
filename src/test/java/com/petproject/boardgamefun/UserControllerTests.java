@@ -1389,4 +1389,55 @@ public class UserControllerTests {
 
     }
 
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteDiaryShouldReturnOk() throws Exception {
+        when(diaryRepository.findDiary_ByUserIdAndId(1, 1)).thenReturn(diary);
+        doNothing().when(diaryRepository).delete(diary);
+
+        var res = this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/1/remove-diary/1"))
+                .andDo(print()).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        verify(diaryRepository).findDiary_ByUserIdAndId(1, 1);
+        verify(diaryRepository).delete(diary);
+
+        Assertions.assertNotEquals(0, res.length());
+    }
+
+    @Test
+    public void deleteDiaryShouldReturnUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/1/remove-diary/1"))
+                .andDo(print()).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteDiaryShouldReturnNotFound_FirstParameter() throws Exception {
+        when(diaryRepository.findDiary_ByUserIdAndId(-1, 1)).thenReturn(null);
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/-1/remove-diary/1"))
+                .andDo(print()).andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+
+        verify(diaryRepository).findDiary_ByUserIdAndId(-1, 1);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteDiaryShouldReturnNotFound_SecondParameter() throws Exception {
+        when(diaryRepository.findDiary_ByUserIdAndId(1, -1)).thenReturn(null);
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/1/remove-diary/-1"))
+                .andDo(print()).andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+
+        verify(diaryRepository).findDiary_ByUserIdAndId(1, -1);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteDiaryShouldReturnNotFound_BothParameters() throws Exception {
+        when(diaryRepository.findDiary_ByUserIdAndId(-1, -1)).thenReturn(null);
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/-1/remove-diary/-1"))
+                .andDo(print()).andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+
+        verify(diaryRepository).findDiary_ByUserIdAndId(-1, -1);
+    }
+
 }

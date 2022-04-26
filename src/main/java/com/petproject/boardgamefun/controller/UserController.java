@@ -458,6 +458,9 @@ public class UserController {
     public ResponseEntity<String> deleteDiary(@PathVariable Integer userId, @PathVariable Integer diaryId) {
 
         var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
+        if (diary == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
 
         diaryRepository.delete(diary);
 

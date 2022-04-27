@@ -1440,4 +1440,96 @@ public class UserControllerTests {
         verify(diaryRepository).findDiary_ByUserIdAndId(-1, -1);
     }
 
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateDiaryShouldReturnIsOk() throws Exception {
+        when(diaryRepository.findDiary_ByUserIdAndId(1, 1)).thenReturn(diary);
+        when(diaryRepository.save(any(Diary.class))).thenReturn(diary);
+        when(diaryService.entityToDiaryDTO(any(Diary.class))).thenReturn(diaryDTO);
+
+        diary.setId(1);
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/1/update-diary/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(diary)))
+                .andDo(print()).andExpect(status().isOk()).andReturn();
+
+        var response = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), DiaryDTO.class);
+
+        verify(diaryRepository).findDiary_ByUserIdAndId(1, 1);
+        verify(diaryRepository).save(any(Diary.class));
+        verify(diaryService).entityToDiaryDTO(any(Diary.class));
+
+        Assertions.assertEquals(diaryDTO.getDiary().getId(), response.getDiary().getId());
+
+        diary.setId(null);
+    }
+
+    @Test
+    public void updateDiaryShouldReturnUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/1/update-diary/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(diary)))
+                .andDo(print()).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateDiaryShouldReturnBadRequest_NotValidInput() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/1/update-diary/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(diary)))
+                .andDo(print()).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateDiaryShouldReturnIsNotFound_FirstParameter() throws Exception {
+        when(diaryRepository.findDiary_ByUserIdAndId(-1, 1)).thenReturn(null);
+
+        diary.setId(1);
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/-1/update-diary/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(diary)))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(diaryRepository).findDiary_ByUserIdAndId(-1, 1);
+        diary.setId(null);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateDiaryShouldReturnIsNotFound_SecondParameter() throws Exception {
+        when(diaryRepository.findDiary_ByUserIdAndId(1, -1)).thenReturn(null);
+
+        diary.setId(1);
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/1/update-diary/-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(diary)))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(diaryRepository).findDiary_ByUserIdAndId(1, -1);
+        diary.setId(null);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateDiaryShouldReturnIsNotFound_BothParameters() throws Exception {
+        when(diaryRepository.findDiary_ByUserIdAndId(-1, -1)).thenReturn(null);
+
+        diary.setId(1);
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/-1/update-diary/-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(diary)))
+                .andDo(print()).andExpect(status().isNotFound());
+
+        verify(diaryRepository).findDiary_ByUserIdAndId(-1, -1);
+        diary.setId(null);
+    }
+
 }

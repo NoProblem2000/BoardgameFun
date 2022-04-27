@@ -472,7 +472,15 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<DiaryDTO> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest) {
 
+        if (diaryRequest.getId() == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
         var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
+        if (diary == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+
         if (diaryRequest.getTitle() != null && !Objects.equals(diary.getTitle(), diaryRequest.getTitle())) {
             diary.setTitle(diaryRequest.getTitle());
         }

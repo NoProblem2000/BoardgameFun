@@ -93,7 +93,7 @@ public class UserController {
     @PostMapping("sign-in")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         if (!userRepository.existsByName(loginRequest.getName())) {
-            return new ResponseEntity<>("Пользователя с таким никнеймом не существует", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Пользователя с таким никнеймом не существует", HttpStatus.NOT_FOUND);
         }
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getName(), loginRequest.getPassword()));
 
@@ -181,8 +181,11 @@ public class UserController {
     @Transactional
     @GetMapping("{id}")
     public ResponseEntity<UserDTO> getUser(@PathVariable Integer id) {
-        var user = userService.entityToUserDTO(userRepository.findUserById(id));
-        return new ResponseEntity<>(user, HttpStatus.OK);
+        var userDTO = userService.entityToUserDTO(userRepository.findUserById(id));
+        if (userDTO.getUser() == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(userDTO, HttpStatus.OK);
     }
 
     @Transactional
@@ -201,6 +204,14 @@ public class UserController {
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
 
+        if (user == null || game == null)
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+
+        var games = gameRepository.findUserGames(userId);
+        if (games.size() != 0 && games.stream().anyMatch(g -> g.getId().equals(gameId))) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
         var userOwnGame = new UserOwnGame();
         userOwnGame.setGame(game);
         userOwnGame.setUser(user);
@@ -215,7 +226,10 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<Integer> deleteGameFromUserCollection(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
-        var userOwnGame = userOwnGameRepository.findUserOwnGame_ByGameIdAndUserId(gameId, userId);
+        var userOwnGame = userOwnGameRepository.findUserOwnGame_ByUserIdAndGameId(userId, gameId);
+
+        if (userOwnGame == null)
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
 
         userOwnGameRepository.delete(userOwnGame);
 
@@ -235,7 +249,10 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> deleteGameRating(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
-        var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId);
+        var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(userId, gameId);
+
+        if (ratingGameByUser == null)
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
 
         ratingGameByUserRepository.delete(ratingGameByUser);
 
@@ -247,21 +264,45 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<Integer> setGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
 
-        var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByGameIdAndUserId(gameId, userId);
-
-        if (ratingGameByUser != null) {
-            ratingGameByUser.setRating(rating);
-            ratingGameByUserRepository.save(ratingGameByUser);
-        } else {
-            var gameRating = new RatingGameByUser();
-            var game = gameRepository.findGameById(gameId);
-            var user = userRepository.findUserById(userId);
-            gameRating.setGame(game);
-            gameRating.setUser(user);
-            gameRating.setRating(rating);
-
-            ratingGameByUserRepository.save(gameRating);
+        if (rating > 10 || rating < 1) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
+        if (ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(userId, gameId) != null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
+        var gameRating = new RatingGameByUser();
+        var game = gameRepository.findGameById(gameId);
+        var user = userRepository.findUserById(userId);
+
+        if (game == null || user == null)
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+
+        gameRating.setGame(game);
+        gameRating.setUser(user);
+        gameRating.setRating(rating);
+
+        ratingGameByUserRepository.save(gameRating);
+
+
+        return new ResponseEntity<>(rating, HttpStatus.OK);
+    }
+
+    @Transactional
+    @PostMapping("/{userId}/update-game-rating/{gameId}/{rating}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<Integer> updateGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
+
+        if (rating > 10 || rating < 1) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+        var ratingGameByUser = ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(userId, gameId);
+        if (ratingGameByUser == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+
+        ratingGameByUser.setRating(rating);
+        ratingGameByUserRepository.save(ratingGameByUser);
 
         return new ResponseEntity<>(rating, HttpStatus.OK);
     }
@@ -280,6 +321,14 @@ public class UserController {
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
 
+        if (userWishRepository.findByUserAndGame(user, game) != null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
+        if (user == null || game == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+
         var userWish = new UserWish();
         userWish.setGame(game);
         userWish.setUser(user);
@@ -290,18 +339,18 @@ public class UserController {
     }
 
     @Transactional
-    @DeleteMapping("{userId}/delete-game-from-wishlist/{gameId}")
+    @DeleteMapping("delete-game-from-wishlist/{userWishId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<?> deleteGameFromUserWishlist(@PathVariable Integer userId, @PathVariable Integer gameId) {
+    public ResponseEntity<?> deleteGameFromUserWishlist(@PathVariable Integer userWishId) {
 
-        var user = userRepository.findUserById(userId);
-        var game = gameRepository.findGameById(gameId);
+        var userWish = userWishRepository.findById(userWishId);
 
-        var userWish = userWishRepository.findByGameAndUser(game, user);
+        if (userWish.isEmpty()) {
+            return new ResponseEntity<>(false, HttpStatus.NOT_FOUND);
+        }
+        userWishRepository.delete(userWish.get());
 
-        userWishRepository.delete(userWish);
-
-        return new ResponseEntity<>(game.getTitle() + " удалена из вашего списка желаемого", HttpStatus.OK);
+        return new ResponseEntity<>(true, HttpStatus.OK);
     }
 
     @Transactional
@@ -309,8 +358,16 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<GameSellDTO>> addGameToSellList(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody GameSell gameSell) {
 
+        if (gameSell.getId() != null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
+
+        if (game == null || user == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
 
         gameSell.setGame(game);
         gameSell.setUser(user);
@@ -336,7 +393,10 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<Integer> removeGameFromSell(@PathVariable Integer userId, @PathVariable Integer gameId) {
 
-        var gameSell = gameSellRepository.findGameSell_ByGameIdAndUserId(gameId, userId);
+        var gameSell = gameSellRepository.findGameSell_ByUserIdAndGameId(userId, gameId);
+        if (gameSell == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
         gameSellRepository.delete(gameSell);
 
         return new ResponseEntity<>(gameId, HttpStatus.OK);
@@ -346,6 +406,10 @@ public class UserController {
     @PutMapping("/update-game-to-sell")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> updateSellGame(@RequestBody GameSell gameSell) {
+
+        if (gameSell.getId() == null || gameSell.getGame() == null || gameSell.getUser() == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
 
         if (gameSell.getComment() != null) {
             gameSell.setComment(gameSell.getComment());
@@ -367,8 +431,16 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<DiaryDTO> addDiary(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody Diary diary) {
 
+        if (diary == null || diary.getGame() == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
+
+        if (game == null || user == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
 
         diary.setUser(user);
         diary.setGame(game);
@@ -386,6 +458,9 @@ public class UserController {
     public ResponseEntity<String> deleteDiary(@PathVariable Integer userId, @PathVariable Integer diaryId) {
 
         var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
+        if (diary == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
 
         diaryRepository.delete(diary);
 
@@ -397,7 +472,15 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<DiaryDTO> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest) {
 
+        if (diaryRequest.getId() == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
         var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
+        if (diary == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+
         if (diaryRequest.getTitle() != null && !Objects.equals(diary.getTitle(), diaryRequest.getTitle())) {
             diary.setTitle(diaryRequest.getTitle());
         }
@@ -414,7 +497,6 @@ public class UserController {
 
     //todo: optimize response - not whole model, only needed fields
     //todo: add news
-    //todo: add rights
     //todo: unique repository???
 
 }

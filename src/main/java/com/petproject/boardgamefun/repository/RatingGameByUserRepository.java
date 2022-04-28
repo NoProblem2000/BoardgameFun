@@ -4,5 +4,5 @@ import com.petproject.boardgamefun.model.RatingGameByUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RatingGameByUserRepository extends JpaRepository<RatingGameByUser, Integer> {
-    RatingGameByUser findRatingGame_ByGameIdAndUserId(Integer gameId, Integer userId);
+    RatingGameByUser findRatingGame_ByUserIdAndGameId(Integer userId, Integer gameId );
 }

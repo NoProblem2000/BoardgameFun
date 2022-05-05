@@ -21,6 +21,7 @@ import com.petproject.boardgamefun.service.DiaryService;
 import com.petproject.boardgamefun.service.GameSellService;
 import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.UserService;
+import com.petproject.boardgamefun.service.mappers.UserMapper;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -60,6 +61,9 @@ import java.util.Optional;
 public class UserControllerTests {
 
     private final String Gateway = "/users";
+
+    @Autowired
+    UserMapper userMapper;
 
     @MockBean
     private UserRepository userRepository;
@@ -198,11 +202,11 @@ public class UserControllerTests {
         users.add(user);
 
 
-        userDTO = new UserDTO(user);
+        userDTO = userMapper.userToUserDTO(user);
         usersDTO = new ArrayList<>();
-        usersDTO.add(new UserDTO(userAdmin));
-        usersDTO.add(new UserDTO(userModerator));
-        usersDTO.add(new UserDTO(user));
+        usersDTO.add(userMapper.userToUserDTO(userAdmin));
+        usersDTO.add(userMapper.userToUserDTO(userModerator));
+        usersDTO.add(userMapper.userToUserDTO(user));
 
 
         game = new Game();
@@ -440,13 +444,13 @@ public class UserControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1")).andDo(print()).andExpect(status().isOk());
         verify(userRepository, only()).findUserById(1);
         verify(userService, only()).entityToUserDTO(userArgumentCaptor.capture());
-        Assertions.assertEquals(userArgumentCaptor.getValue().getName(), userDTO.getUser().getName());
+        Assertions.assertEquals(userArgumentCaptor.getValue().getName(), userDTO.name());
     }
 
     @Test
     public void getUserShouldReturnStatusNotFound() throws Exception {
         when(userRepository.findUserById(-1)).thenReturn(null);
-        when(userService.entityToUserDTO(null)).thenReturn(new UserDTO());
+        when(userService.entityToUserDTO(null)).thenReturn(null);
         this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1")).andDo(print()).andExpect(status().isNotFound());
         verify(userRepository, only()).findUserById(-1);
         verify(userService, only()).entityToUserDTO(null);
@@ -469,11 +473,11 @@ public class UserControllerTests {
         verify(userRepository, only()).findUserById(1);
         verify(userService, only()).entityToUserDTO(userArgumentCaptor.capture());
 
-        Assertions.assertEquals(userArgumentCaptor.getValue().getName(), userDTO.getUser().getName());
+        Assertions.assertEquals(userArgumentCaptor.getValue().getName(), userDTO.name());
 
-        Assertions.assertEquals(userResponse.getUser().getName(), user.getName());
-        Assertions.assertEquals(userResponse.getUser().getMail(), user.getMail());
-        Assertions.assertEquals(userResponse.getUser().getRole(), user.getRole());
+        Assertions.assertEquals(userResponse.name(), user.getName());
+        Assertions.assertEquals(userResponse.mail(), user.getMail());
+        Assertions.assertEquals(userResponse.role(), user.getRole());
     }
 
     @Test

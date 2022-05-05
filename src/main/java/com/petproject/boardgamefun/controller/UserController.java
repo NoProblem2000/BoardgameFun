@@ -182,7 +182,7 @@ public class UserController {
     @GetMapping("{id}")
     public ResponseEntity<UserDTO> getUser(@PathVariable Integer id) {
         var userDTO = userService.entityToUserDTO(userRepository.findUserById(id));
-        if (userDTO.getUser() == null) {
+        if (userDTO == null) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(userDTO, HttpStatus.OK);

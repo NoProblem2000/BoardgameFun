@@ -21,6 +21,7 @@ import com.petproject.boardgamefun.service.DiaryService;
 import com.petproject.boardgamefun.service.GameSellService;
 import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.UserService;
+import com.petproject.boardgamefun.service.mappers.GameMapper;
 import com.petproject.boardgamefun.service.mappers.UserMapper;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,6 +65,9 @@ public class UserControllerTests {
 
     @Autowired
     UserMapper userMapper;
+
+    @Autowired
+    GameMapper gameMapper;
 
     @MockBean
     private UserRepository userRepository;
@@ -119,8 +123,8 @@ public class UserControllerTests {
     private User userModerator;
     private User user;
     private List<User> users;
-    private List<GameDTO> gamesDTO;
-    private GameDTO gameDTO;
+    private List<GameDataDTO> gamesDTO;
+    private GameDataDTO gameDataDTO;
     private Game game;
     private List<Game> games;
     private List<UserGameRatingProjection> userGameRatingProjections;
@@ -252,17 +256,17 @@ public class UserControllerTests {
         designers.add(designer.getName());
         designers.add(designer2.getName());
 
-        gameDTO = new GameDTO(game, 8.4, designers);
+        gameDataDTO = new GameDataDTO(gameMapper.gameToGameDTO(game), 8.4, designers);
         designers.remove(1);
-        GameDTO gameDTO1 = new GameDTO(game, 7.9, designers);
+        GameDataDTO gameDataDTO1 = new GameDataDTO(gameMapper.gameToGameDTO(game), 7.9, designers);
 
         userGameRatingProjections = new ArrayList<>();
         userGameRatingProjections.add(new UserGameRatingPOJO(game, 3));
         userGameRatingProjections.add(new UserGameRatingPOJO(game, 10));
 
         gamesDTO = new ArrayList<>();
-        gamesDTO.add(gameDTO);
-        gamesDTO.add(gameDTO1);
+        gamesDTO.add(gameDataDTO);
+        gamesDTO.add(gameDataDTO1);
 
         ratingGameByUser = new RatingGameByUser();
         ratingGameByUser.setUser(user);
@@ -487,13 +491,13 @@ public class UserControllerTests {
         when(gameService.entitiesToGameDTO(games)).thenReturn(gamesDTO);
 
         MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1/games")).andExpect(status().isOk()).andReturn();
-        var userCollection = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+        var userCollection = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDataDTO[].class);
 
         verify(gameRepository, only()).findUserGames(1);
         verify(gameService, only()).entitiesToGameDTO(gameListArgumentCaptor.capture());
 
         Assertions.assertNotEquals(gameListArgumentCaptor.getValue().size(), 0);
-        Assertions.assertEquals(userCollection[0].getGame().getId(), gamesDTO.get(0).getGame().getId());
+        Assertions.assertEquals(userCollection[0].getGame().id(), gamesDTO.get(0).getGame().id());
     }
 
     @Test
@@ -502,7 +506,7 @@ public class UserControllerTests {
         when(gameRepository.findUserGames(-1)).thenReturn(null);
         when(gameService.entitiesToGameDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
         MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1/games")).andExpect(status().isOk()).andReturn();
-        var gameDTOS = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+        var gameDTOS = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDataDTO[].class);
 
         verify(gameRepository, only()).findUserGames(-1);
         verify(gameService, only()).entitiesToGameDTO(gameListArgumentCaptor.capture());
@@ -519,13 +523,13 @@ public class UserControllerTests {
 
         MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1/games-rating").characterEncoding("UTF-8"))
                 .andExpect(status().isOk()).andReturn();
-        var userRatingList = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+        var userRatingList = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDataDTO[].class);
 
         verify(gameRepository, only()).findUserGameRatingList(1);
         verify(gameService, only()).userGameRatingToGameDTO(userGameRatingProjectionCaptor.capture());
 
         Assertions.assertNotEquals(userGameRatingProjectionCaptor.getValue().size(), 0);
-        Assertions.assertEquals(userRatingList[0].getGame().getId(), gamesDTO.get(0).getGame().getId());
+        Assertions.assertEquals(userRatingList[0].getGame().id(), gamesDTO.get(0).getGame().id());
     }
 
     @Test
@@ -535,7 +539,7 @@ public class UserControllerTests {
         when(gameService.userGameRatingToGameDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
 
         MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1/games-rating")).andExpect(status().isOk()).andReturn();
-        var gameDTOS = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+        var gameDTOS = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDataDTO[].class);
 
         verify(gameRepository, only()).findUserGameRatingList(-1);
         verify(gameService, only()).userGameRatingToGameDTO(userGameRatingProjectionCaptor.capture());
@@ -904,13 +908,13 @@ public class UserControllerTests {
         var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1/wishlist"))
                 .andExpect(status().isOk()).andReturn();
 
-        var response = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+        var response = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDataDTO[].class);
 
         verify(gameRepository).findUserWishlist(1);
         verify(gameService).entitiesToGameDTO(gameListArgumentCaptor.capture());
 
         Assertions.assertEquals(response.length, gamesDTO.size());
-        Assertions.assertEquals(response[0].getGame().getId(), gamesDTO.get(0).getGame().getId());
+        Assertions.assertEquals(response[0].getGame().id(), gamesDTO.get(0).getGame().id());
         Assertions.assertEquals(response[0].getRating(), gamesDTO.get(0).getRating());
         Assertions.assertEquals(gameListArgumentCaptor.getValue().size(), games.size());
 
@@ -922,7 +926,7 @@ public class UserControllerTests {
         when(gameRepository.findUserWishlist(-1)).thenReturn(new ArrayList<>());
         when(gameService.entitiesToGameDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
         var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1/wishlist")).andExpect(status().isOk()).andReturn();
-        var response = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDTO[].class);
+        var response = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), GameDataDTO[].class);
         Assertions.assertEquals(0, response.length);
     }
 

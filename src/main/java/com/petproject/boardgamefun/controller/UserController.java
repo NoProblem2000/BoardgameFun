@@ -1,7 +1,7 @@
 package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.DiaryDTO;
-import com.petproject.boardgamefun.dto.GameDTO;
+import com.petproject.boardgamefun.dto.GameDataDTO;
 import com.petproject.boardgamefun.dto.GameSellDTO;
 import com.petproject.boardgamefun.dto.UserDTO;
 import com.petproject.boardgamefun.dto.request.PasswordChangeRequest;
@@ -190,7 +190,7 @@ public class UserController {
 
     @Transactional
     @GetMapping("/{id}/games")
-    public ResponseEntity<List<GameDTO>> getUserCollection(@PathVariable Integer id) {
+    public ResponseEntity<List<GameDataDTO>> getUserCollection(@PathVariable Integer id) {
 
         var games = gameService.entitiesToGameDTO(gameRepository.findUserGames(id));
         return new ResponseEntity<>(games, HttpStatus.OK);
@@ -237,7 +237,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/games-rating")
-    public ResponseEntity<List<GameDTO>> getUserRatingList(@PathVariable Integer userId) {
+    public ResponseEntity<List<GameDataDTO>> getUserRatingList(@PathVariable Integer userId) {
 
         var ratingGamesByUser = gameService.userGameRatingToGameDTO(gameRepository.findUserGameRatingList(userId));
 
@@ -308,7 +308,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}/wishlist")
-    public ResponseEntity<List<GameDTO>> getUserWishlist(@PathVariable Integer id) {
+    public ResponseEntity<List<GameDataDTO>> getUserWishlist(@PathVariable Integer id) {
         var games = gameService.entitiesToGameDTO(gameRepository.findUserWishlist(id));
         return new ResponseEntity<>(games, HttpStatus.OK);
     }

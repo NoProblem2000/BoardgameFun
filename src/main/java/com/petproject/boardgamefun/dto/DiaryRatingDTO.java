@@ -1,11 +1,6 @@
 package com.petproject.boardgamefun.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import java.io.Serializable;
 
-@Data
-@AllArgsConstructor
-public class DiaryRatingDTO {
-    private Integer id;
-    private Double rating;
+public record DiaryRatingDTO(Integer id, Double rating) implements Serializable {
 }

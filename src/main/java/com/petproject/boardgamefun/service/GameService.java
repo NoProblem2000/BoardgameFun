@@ -1,7 +1,7 @@
 package com.petproject.boardgamefun.service;
 
 import com.petproject.boardgamefun.dto.FilterGamesDTO;
-import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
+import com.petproject.boardgamefun.dto.RatingGameByUserDTO;
 import com.petproject.boardgamefun.dto.projection.*;
 import com.petproject.boardgamefun.dto.GameDataDTO;
 import com.petproject.boardgamefun.model.Game;
@@ -72,11 +72,11 @@ public class GameService {
         return games;
     }
 
-    public List<UsersGameRatingDTO> usersGameRatingToDTO(List<UsersGameRatingProjection> projections) {
-        ArrayList<UsersGameRatingDTO> users = new ArrayList<>();
+    public List<RatingGameByUserDTO> usersGameRatingToDTO(List<UsersGameRatingProjection> projections) {
+        ArrayList<RatingGameByUserDTO> users = new ArrayList<>();
         for (var projection :
                 projections) {
-            users.add(new UsersGameRatingDTO(projection.getUser(), projection.getRating()));
+            users.add(new RatingGameByUserDTO(projection.getUser().getId(), projection.getRating()));
         }
         return users;
     }

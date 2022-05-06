@@ -262,7 +262,7 @@ public class UserController {
     @Transactional
     @PostMapping("/{userId}/set-game-rating/{gameId}/{rating}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<Integer> setGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
+    public ResponseEntity<Double> setGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
 
         if (rating > 10 || rating < 1) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
@@ -280,18 +280,18 @@ public class UserController {
 
         gameRating.setGame(game);
         gameRating.setUser(user);
-        gameRating.setRating(rating);
+        gameRating.setRating(rating.doubleValue());
 
         ratingGameByUserRepository.save(gameRating);
 
 
-        return new ResponseEntity<>(rating, HttpStatus.OK);
+        return new ResponseEntity<>(rating.doubleValue(), HttpStatus.OK);
     }
 
     @Transactional
-    @PostMapping("/{userId}/update-game-rating/{gameId}/{rating}")
+    @PatchMapping("/{userId}/update-game-rating/{gameId}/{rating}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<Integer> updateGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
+    public ResponseEntity<Double> updateGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
 
         if (rating > 10 || rating < 1) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
@@ -301,10 +301,10 @@ public class UserController {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
 
-        ratingGameByUser.setRating(rating);
+        ratingGameByUser.setRating(rating.doubleValue());
         ratingGameByUserRepository.save(ratingGameByUser);
 
-        return new ResponseEntity<>(rating, HttpStatus.OK);
+        return new ResponseEntity<>(rating.doubleValue(), HttpStatus.OK);
     }
 
     @GetMapping("/{id}/wishlist")

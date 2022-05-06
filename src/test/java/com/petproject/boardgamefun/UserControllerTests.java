@@ -275,7 +275,7 @@ public class UserControllerTests {
         ratingGameByUser = new RatingGameByUser();
         ratingGameByUser.setUser(user);
         ratingGameByUser.setGame(game);
-        ratingGameByUser.setRating(10);
+        ratingGameByUser.setRating(10.0);
 
         userOwnGame = new UserOwnGame();
         userOwnGame.setUser(user);
@@ -609,7 +609,7 @@ public class UserControllerTests {
         var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/set-game-rating/1/10"))
                 .andDo(print()).andExpect(status().isOk()).andReturn();
 
-        var rating = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), Integer.class);
+        var rating = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), Double.class);
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(1, 1);
         verify(userRepository).findUserById(1);
@@ -692,26 +692,26 @@ public class UserControllerTests {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(1, 1)).thenReturn(ratingGameByUser);
         when(ratingGameByUserRepository.save(ratingGameByUser)).thenReturn(null);
 
-        var result = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/update-game-rating/1/10"))
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/1/update-game-rating/1/10"))
                 .andDo(print()).andExpect(status().isOk()).andReturn();
 
-        var rating = objectMapper.readValue(result.getResponse().getContentAsByteArray(), Integer.class);
+        var rating = objectMapper.readValue(result.getResponse().getContentAsByteArray(), Double.class);
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(1, 1);
         verify(ratingGameByUserRepository).save(ratingGameByUser);
-        Assertions.assertEquals(ratingGameByUser.getRating(), rating);
+        Assertions.assertEquals(ratingGameByUser.getRating(), rating.doubleValue());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void updateGameRatingShouldReturnBadRequestLessThanNormal() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/update-game-rating/1/0")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/1/update-game-rating/1/0")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void updateGameRatingShouldReturnBadRequestMoreThanNormal() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/update-game-rating/1/11")).andDo(print()).andExpect(status().isBadRequest());
+        this.mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/1/update-game-rating/1/11")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -719,7 +719,7 @@ public class UserControllerTests {
     public void updateGameRatingShouldReturnNotFound_FirstParameter() throws Exception {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(-1, 1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/update-game-rating/1/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/-1/update-game-rating/1/1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(-1, 1);
@@ -730,7 +730,7 @@ public class UserControllerTests {
     public void updateGameRatingShouldReturnNotFound_SecondParameter() throws Exception {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(1, -1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/update-game-rating/-1/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/1/update-game-rating/-1/1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(1, -1);
@@ -741,7 +741,7 @@ public class UserControllerTests {
     public void updateGameRatingShouldReturnNotFound_BothParameters() throws Exception {
         when(ratingGameByUserRepository.findRatingGame_ByUserIdAndGameId(-1, -1)).thenReturn(null);
 
-        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/update-game-rating/-1/1"))
+        this.mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/-1/update-game-rating/-1/1"))
                 .andDo(print()).andExpect(status().isNotFound());
 
         verify(ratingGameByUserRepository).findRatingGame_ByUserIdAndGameId(-1, -1);

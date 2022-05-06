@@ -2,7 +2,7 @@ package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.FilterGamesDTO;
 import com.petproject.boardgamefun.dto.GameDataDTO;
-import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
+import com.petproject.boardgamefun.dto.RatingGameByUserDTO;
 import com.petproject.boardgamefun.model.Expansion;
 import com.petproject.boardgamefun.model.Game;
 import com.petproject.boardgamefun.model.GameByDesigner;
@@ -180,7 +180,7 @@ public class GameController {
 
     @Transactional
     @GetMapping("/{gameId}/users-rating")
-    public ResponseEntity<List<UsersGameRatingDTO>> getUsersRating(@PathVariable Integer gameId) {
+    public ResponseEntity<List<RatingGameByUserDTO>> getUsersRating(@PathVariable Integer gameId) {
 
         var ratings = gameService.usersGameRatingToDTO(userRepository.findGameRatings(gameId));
 

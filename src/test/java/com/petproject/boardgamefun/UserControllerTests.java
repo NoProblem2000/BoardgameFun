@@ -21,6 +21,7 @@ import com.petproject.boardgamefun.service.DiaryService;
 import com.petproject.boardgamefun.service.GameSellService;
 import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.UserService;
+import com.petproject.boardgamefun.service.mappers.DiaryMapper;
 import com.petproject.boardgamefun.service.mappers.GameMapper;
 import com.petproject.boardgamefun.service.mappers.UserMapper;
 import org.junit.jupiter.api.*;
@@ -68,6 +69,9 @@ public class UserControllerTests {
 
     @Autowired
     GameMapper gameMapper;
+
+    @Autowired
+    DiaryMapper diaryMapper;
 
     @MockBean
     private UserRepository userRepository;
@@ -138,7 +142,7 @@ public class UserControllerTests {
     private GameSellDTO gameSellDTO;
     private GameSell gameSell;
     private Diary diary;
-    private DiaryDTO diaryDTO;
+    private DiaryDataDTO diaryDTO;
 
     @Autowired
     private MockMvc mockMvc;
@@ -310,7 +314,7 @@ public class UserControllerTests {
         diary.setText("Not so good, but good");
         diary.setPublicationTime(OffsetDateTime.now());
 
-        diaryDTO = new DiaryDTO(diary, 8.0);
+        diaryDTO = new DiaryDataDTO(diaryMapper.diaryToDiaryDTO(diary), 8.0);
     }
 
     @Test
@@ -1323,14 +1327,14 @@ public class UserControllerTests {
                         .content(objectMapper.writeValueAsString(diary)))
                 .andDo(print()).andExpect(status().isOk()).andReturn();
 
-        var response = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), DiaryDTO.class);
+        var response = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), DiaryDataDTO.class);
 
         verify(userRepository).findUserById(1);
         verify(gameRepository).findGameById(1);
         verify(diaryRepository).save(any(Diary.class));
         verify(diaryService).entityToDiaryDTO(any(Diary.class));
 
-        Assertions.assertEquals(diaryDTO.getDiary().getId(), response.getDiary().getId());
+        Assertions.assertEquals(diaryDTO.getDiary().id(), response.getDiary().id());
 
     }
 
@@ -1462,13 +1466,13 @@ public class UserControllerTests {
                         .content(objectMapper.writeValueAsString(diary)))
                 .andDo(print()).andExpect(status().isOk()).andReturn();
 
-        var response = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), DiaryDTO.class);
+        var response = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), DiaryDataDTO.class);
 
         verify(diaryRepository).findDiary_ByUserIdAndId(1, 1);
         verify(diaryRepository).save(any(Diary.class));
         verify(diaryService).entityToDiaryDTO(any(Diary.class));
 
-        Assertions.assertEquals(diaryDTO.getDiary().getId(), response.getDiary().getId());
+        Assertions.assertEquals(diaryDTO.getDiary().id(), response.getDiary().id());
 
         diary.setId(null);
     }

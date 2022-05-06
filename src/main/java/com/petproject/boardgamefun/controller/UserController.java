@@ -1,6 +1,6 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.DiaryDTO;
+import com.petproject.boardgamefun.dto.DiaryDataDTO;
 import com.petproject.boardgamefun.dto.GameDataDTO;
 import com.petproject.boardgamefun.dto.GameSellDTO;
 import com.petproject.boardgamefun.dto.UserDTO;
@@ -429,7 +429,7 @@ public class UserController {
     @Transactional
     @PostMapping("{userId}/add-diary/{gameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<DiaryDTO> addDiary(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody Diary diary) {
+    public ResponseEntity<DiaryDataDTO> addDiary(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody Diary diary) {
 
         if (diary == null || diary.getGame() == null) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
@@ -470,7 +470,7 @@ public class UserController {
     @Transactional
     @PutMapping({"{userId}/update-diary/{diaryId}"})
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<DiaryDTO> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest) {
+    public ResponseEntity<DiaryDataDTO> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest) {
 
         if (diaryRequest.getId() == null) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);

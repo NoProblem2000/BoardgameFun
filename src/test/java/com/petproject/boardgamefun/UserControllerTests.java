@@ -298,14 +298,14 @@ public class UserControllerTests {
         gameSellProjectionList.add(new GameSellPOJO(game1, "excellent", "not open", 300));
 
         gameSellDTO = new GameSellDTO();
-        gameSellDTO.setGame(game);
+        gameSellDTO.setGame(gameMapper.gameToGameDTO(game));
         gameSellDTO.setCondition("good");
         gameSellDTO.setComment("so good");
         gameSellDTO.setPrice(100);
 
         gameSellDTOList = new ArrayList<>();
         gameSellDTOList.add(gameSellDTO);
-        gameSellDTOList.add(new GameSellDTO(game1, "excellent", "not open", 300));
+        gameSellDTOList.add(new GameSellDTO(gameMapper.gameToGameDTO(game1), "excellent", "not open", 300));
 
         diary = new Diary();
         diary.setGame(game);
@@ -1099,7 +1099,7 @@ public class UserControllerTests {
         verify(gameSellService).projectionsToGameSellDTO(gameSellProjectionList);
 
         Assertions.assertEquals(response.length, gameSellDTOList.size());
-        Assertions.assertEquals(response[0].getGame().getId(), gameSellDTOList.get(0).getGame().getId());
+        Assertions.assertEquals(response[0].getGame().id(), gameSellDTOList.get(0).getGame().id());
     }
 
     @Test
@@ -1181,7 +1181,7 @@ public class UserControllerTests {
         verify(gameSellService).projectionsToGameSellDTO(gameSellProjectionList);
 
         Assertions.assertEquals(response.length, gameSellDTOList.size());
-        Assertions.assertEquals(response[0].getGame().getId(), gameSellDTOList.get(0).getGame().getId());
+        Assertions.assertEquals(response[0].getGame().id(), gameSellDTOList.get(0).getGame().id());
 
     }
 

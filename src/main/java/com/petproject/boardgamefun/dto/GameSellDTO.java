@@ -1,6 +1,5 @@
 package com.petproject.boardgamefun.dto;
 
-import com.petproject.boardgamefun.model.Game;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GameSellDTO {
-    private Game game;
+    private GameDTO game;
     private String condition;
     private String comment;
     private Integer price;

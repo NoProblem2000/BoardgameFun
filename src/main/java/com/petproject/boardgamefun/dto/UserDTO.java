@@ -1,13 +1,9 @@
 package com.petproject.boardgamefun.dto;
 
-import com.petproject.boardgamefun.model.User;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.io.Serializable;
+import java.time.OffsetDateTime;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class UserDTO {
-    private User user;
+
+public record UserDTO(Integer id, String name, String password, String role, String mail, String town, Double rating,
+                      byte[] avatar, OffsetDateTime registrationDate) implements Serializable {
 }

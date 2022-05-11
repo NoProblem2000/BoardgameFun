@@ -1,10 +1,11 @@
 package com.petproject.boardgamefun.service;
 
 import com.petproject.boardgamefun.dto.FilterGamesDTO;
-import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
+import com.petproject.boardgamefun.dto.RatingGameByUserDTO;
 import com.petproject.boardgamefun.dto.projection.*;
-import com.petproject.boardgamefun.dto.GameDTO;
+import com.petproject.boardgamefun.dto.GameDataDTO;
 import com.petproject.boardgamefun.model.Game;
+import com.petproject.boardgamefun.service.mappers.GameMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -13,61 +14,69 @@ import java.util.stream.Collectors;
 
 @Service
 public class GameService {
-    public GameDTO projectionsToGameDTO(GameProjection gameProjection, List<DesignersProjection> designersProjection) {
-        return new GameDTO(gameProjection.getGame(),
+
+    final
+    GameMapper gameMapper;
+
+    public GameService(GameMapper gameMapper) {
+        this.gameMapper = gameMapper;
+    }
+
+    public GameDataDTO projectionsToGameDTO(GameProjection gameProjection, List<DesignersProjection> designersProjection) {
+        return new GameDataDTO(gameMapper.gameToGameDTO(gameProjection.getGame()),
                 gameProjection.getRating(),
                 designersProjection.stream().map(DesignersProjection::getDesigner).collect(Collectors.toList()));
     }
 
-    public GameDTO projectionToGameDTO(GameProjection gameProjection) {
-        return new GameDTO(gameProjection.getGame(), null, null);
+    public GameDataDTO projectionToGameDTO(GameProjection gameProjection) {
+        return new GameDataDTO(gameMapper.gameToGameDTO(gameProjection.getGame()), null, null);
     }
 
-    public List<GameDTO> projectionsToGameDTO(List<GameProjection> gameProjections) {
-        List<GameDTO> games = new ArrayList<>();
+    public List<GameDataDTO> projectionsToGameDTO(List<GameProjection> gameProjections) {
+        List<GameDataDTO> games = new ArrayList<>();
         for (var game :
                 gameProjections) {
-            games.add(new GameDTO(game.getGame(), game.getRating(), null));
+            games.add(new GameDataDTO(gameMapper.gameToGameDTO(game.getGame()), game.getRating(), null));
         }
         return games;
     }
 
 
-    public List<GameDTO> entitiesToGameDTO(List<Game> games) {
-        ArrayList<GameDTO> gamesDTO = new ArrayList<>();
+    public List<GameDataDTO> entitiesToGameDTO(List<Game> games) {
+        ArrayList<GameDataDTO> gamesDTO = new ArrayList<>();
         for (var game :
                 games) {
-            gamesDTO.add(new GameDTO(game, null, null));
+            gamesDTO.add(new GameDataDTO(gameMapper.gameToGameDTO(game), null, null));
         }
         return gamesDTO;
     }
 
-    public GameDTO entityToGameDTO(Game game){
-        return new GameDTO(game, null, null);
+    public GameDataDTO entityToGameDTO(Game game) {
+        return new GameDataDTO(gameMapper.gameToGameDTO(game), null, null);
     }
 
     public List<FilterGamesDTO> getTitlesFromProjections(List<GamesFilterByTitleProjection> projections) {
         ArrayList<FilterGamesDTO> games = new ArrayList<>();
-        for (var projection: projections){
+        for (var projection : projections) {
             games.add(new FilterGamesDTO(projection.getId(), projection.getTitle()));
         }
         return games;
     }
 
-    public List<GameDTO> userGameRatingToGameDTO(List<UserGameRatingProjection> projections) {
-        ArrayList<GameDTO> games = new ArrayList<>();
+    public List<GameDataDTO> userGameRatingToGameDTO(List<UserGameRatingProjection> projections) {
+        ArrayList<GameDataDTO> games = new ArrayList<>();
         for (var projection :
                 projections) {
-            games.add(new GameDTO(projection.getGame(), (double) projection.getRating(), null));
+            games.add(new GameDataDTO(gameMapper.gameToGameDTO(projection.getGame()), (double) projection.getRating(), null));
         }
         return games;
     }
 
-    public List<UsersGameRatingDTO> usersGameRatingToDTO(List<UsersGameRatingProjection> projections) {
-        ArrayList<UsersGameRatingDTO> users = new ArrayList<>();
+    public List<RatingGameByUserDTO> usersGameRatingToDTO(List<UsersGameRatingProjection> projections) {
+        ArrayList<RatingGameByUserDTO> users = new ArrayList<>();
         for (var projection :
                 projections) {
-            users.add(new UsersGameRatingDTO(projection.getUser(), projection.getRating()));
+            users.add(new RatingGameByUserDTO(projection.getUser().getId(), projection.getRating()));
         }
         return users;
     }

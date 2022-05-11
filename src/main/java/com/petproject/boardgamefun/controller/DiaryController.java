@@ -1,7 +1,7 @@
 package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.DiaryCommentDTO;
-import com.petproject.boardgamefun.dto.DiaryDTO;
+import com.petproject.boardgamefun.dto.DiaryDataDTO;
 import com.petproject.boardgamefun.dto.DiaryRatingDTO;
 import com.petproject.boardgamefun.dto.request.DiaryCommentRequest;
 import com.petproject.boardgamefun.dto.request.DiaryRatingRequest;
@@ -48,9 +48,9 @@ public class DiaryController {
 
     @Transactional
     @GetMapping("")
-    public ResponseEntity<List<DiaryDTO>> getDiaries(@RequestParam(required = false) Integer userId, @RequestParam(required = false) Integer gameId) {
+    public ResponseEntity<List<DiaryDataDTO>> getDiaries(@RequestParam(required = false) Integer userId, @RequestParam(required = false) Integer gameId) {
 
-        List<DiaryDTO> diaries;
+        List<DiaryDataDTO> diaries;
 
         if (userId != null)
             diaries = diaryService.projectionsToDiaryDTO(diaryRepository.findUserDiaries(userId));
@@ -64,7 +64,7 @@ public class DiaryController {
 
     @Transactional
     @GetMapping("/{diaryId}")
-    public ResponseEntity<DiaryDTO> getDiary(@PathVariable Integer diaryId) {
+    public ResponseEntity<DiaryDataDTO> getDiary(@PathVariable Integer diaryId) {
         var diaryProjection = diaryService.projectionToDiaryDTO(diaryRepository.findDiaryUsingId(diaryId));
 
         return new ResponseEntity<>(diaryProjection, HttpStatus.OK);

@@ -1,6 +1,5 @@
 package com.petproject.boardgamefun.dto;
 
-import com.petproject.boardgamefun.model.User;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UsersGameRatingDTO {
-    private User user;
+public class ForumDataDTO {
+    private ForumDTO forum;
     private Double rating;
 }

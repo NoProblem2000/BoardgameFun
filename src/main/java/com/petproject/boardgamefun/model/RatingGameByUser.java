@@ -11,7 +11,7 @@ public class RatingGameByUser {
     private Integer id;
 
     @Column(name = "rating", nullable = false)
-    private Integer rating;
+    private Double rating;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "\"user\"", nullable = false)
@@ -37,11 +37,11 @@ public class RatingGameByUser {
         this.user = user;
     }
 
-    public Integer getRating() {
+    public Double getRating() {
         return rating;
     }
 
-    public void setRating(Integer rating) {
+    public void setRating(Double rating) {
         this.rating = rating;
     }
 

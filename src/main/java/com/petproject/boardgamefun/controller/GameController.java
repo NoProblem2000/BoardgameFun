@@ -1,8 +1,8 @@
 package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.FilterGamesDTO;
-import com.petproject.boardgamefun.dto.GameDTO;
-import com.petproject.boardgamefun.dto.UsersGameRatingDTO;
+import com.petproject.boardgamefun.dto.GameDataDTO;
+import com.petproject.boardgamefun.dto.RatingGameByUserDTO;
 import com.petproject.boardgamefun.model.Expansion;
 import com.petproject.boardgamefun.model.Game;
 import com.petproject.boardgamefun.model.GameByDesigner;
@@ -43,7 +43,7 @@ public class GameController {
 
     @Transactional
     @GetMapping()
-    ResponseEntity<List<GameDTO>> getGames() {
+    ResponseEntity<List<GameDataDTO>> getGames() {
 
         var games = gameService.projectionsToGameDTO(gameRepository.findGames());
 
@@ -52,7 +52,7 @@ public class GameController {
 
     @Transactional
     @GetMapping("/get-game/{id}")
-    public ResponseEntity<GameDTO> getGameByCriteria(@PathVariable Integer id) {
+    public ResponseEntity<GameDataDTO> getGameByCriteria(@PathVariable Integer id) {
         var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGame(id), designerRepository.findDesignersUsingGame(id));
         return new ResponseEntity<>(gameDTO, HttpStatus.OK);
     }
@@ -68,7 +68,7 @@ public class GameController {
     @Transactional
     @PostMapping("/add")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<GameDTO> addGame(@RequestBody Game newGame) {
+    public ResponseEntity<GameDataDTO> addGame(@RequestBody Game newGame) {
         gameRepository.save(newGame);
         var game = gameService.entityToGameDTO(newGame);
 
@@ -78,7 +78,7 @@ public class GameController {
     @Transactional
     @PostMapping("/upload-image/{gameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<GameDTO> uploadImage(@PathVariable Integer gameId, @RequestParam("picture") MultipartFile file) throws IOException {
+    public ResponseEntity<GameDataDTO> uploadImage(@PathVariable Integer gameId, @RequestParam("picture") MultipartFile file) throws IOException {
         var game = gameRepository.findGameById(gameId);
         game.setPicture(file.getBytes());
         gameRepository.save(game);
@@ -89,7 +89,7 @@ public class GameController {
     @Transactional
     @PutMapping("/update")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<GameDTO> updateGame(@RequestBody Game updatedGame) {
+    public ResponseEntity<GameDataDTO> updateGame(@RequestBody Game updatedGame) {
         gameRepository.save(updatedGame);
         var game = gameService.entityToGameDTO(updatedGame);
         return new ResponseEntity<>(game, HttpStatus.OK);
@@ -106,7 +106,7 @@ public class GameController {
 
     @Transactional
     @GetMapping("/expansions/{gameId}")
-    public ResponseEntity<List<GameDTO>> getExpansions(@PathVariable Integer gameId) {
+    public ResponseEntity<List<GameDataDTO>> getExpansions(@PathVariable Integer gameId) {
         var gamesExpansions = gameService.entitiesToGameDTO(gameRepository.getExpansions(gameId));
 
         return new ResponseEntity<>(gamesExpansions, HttpStatus.OK);
@@ -115,7 +115,7 @@ public class GameController {
     @Transactional
     @PostMapping("/add-expansion/{parentGameId}/{daughterGameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<List<GameDTO>> addExpansion(@PathVariable Integer parentGameId, @PathVariable Integer daughterGameId) {
+    public ResponseEntity<List<GameDataDTO>> addExpansion(@PathVariable Integer parentGameId, @PathVariable Integer daughterGameId) {
         var parentGame = gameRepository.findGameById(parentGameId);
         var daughterGame = gameRepository.findGameById(daughterGameId);
 
@@ -132,7 +132,7 @@ public class GameController {
     @Transactional
     @DeleteMapping("/delete-expansion/{parentGameId}/{daughterGameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<List<GameDTO>> deleteExpansion(@PathVariable Integer daughterGameId, @PathVariable Integer parentGameId) {
+    public ResponseEntity<List<GameDataDTO>> deleteExpansion(@PathVariable Integer daughterGameId, @PathVariable Integer parentGameId) {
         var expansion = expansionRepository.findExpansion_ByDaughterGameIdAndParentGameId(daughterGameId, parentGameId);
         expansionRepository.delete(expansion);
 
@@ -143,7 +143,7 @@ public class GameController {
 
     @Transactional
     @GetMapping("/similar/{gameId}")
-    public ResponseEntity<List<GameDTO>> getSimilarGames(@PathVariable Integer gameId) {
+    public ResponseEntity<List<GameDataDTO>> getSimilarGames(@PathVariable Integer gameId) {
         var similarGames = gameService.entitiesToGameDTO(gameRepository.getSimilarGames(gameId));
 
         return new ResponseEntity<>(similarGames, HttpStatus.OK);
@@ -152,7 +152,7 @@ public class GameController {
     @Transactional
     @PostMapping("/add-similar/{referenceGameId}/{sourceGameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<List<GameDTO>> addSimilarGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
+    public ResponseEntity<List<GameDataDTO>> addSimilarGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
         var referenceGame = gameRepository.findGameById(referenceGameId);
         var sourceGame = gameRepository.findGameById(sourceGameId);
 
@@ -169,7 +169,7 @@ public class GameController {
     @Transactional
     @DeleteMapping("/delete-similar/{referenceGameId}/{sourceGameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<List<GameDTO>> deleteSameGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
+    public ResponseEntity<List<GameDataDTO>> deleteSameGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
         var sameGame = sameGameRepository.findSameGame_ByReferenceGameIdAndSourceGameId(referenceGameId, sourceGameId);
         sameGameRepository.delete(sameGame);
 
@@ -180,7 +180,7 @@ public class GameController {
 
     @Transactional
     @GetMapping("/{gameId}/users-rating")
-    public ResponseEntity<List<UsersGameRatingDTO>> getUsersRating(@PathVariable Integer gameId) {
+    public ResponseEntity<List<RatingGameByUserDTO>> getUsersRating(@PathVariable Integer gameId) {
 
         var ratings = gameService.usersGameRatingToDTO(userRepository.findGameRatings(gameId));
 
@@ -192,7 +192,7 @@ public class GameController {
     @Transactional
     @PostMapping("/{gameId}/set-designer/{designerId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<GameDTO> addDesignerToGame(@PathVariable Integer gameId, @PathVariable Integer designerId) {
+    public ResponseEntity<GameDataDTO> addDesignerToGame(@PathVariable Integer gameId, @PathVariable Integer designerId) {
         var game = gameRepository.findGameById(gameId);
         var designer = designerRepository.findDesignerById(designerId);
 
@@ -211,7 +211,7 @@ public class GameController {
     @Transactional
     @DeleteMapping("{gameId}/remove-designer/{gameByDesignerId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<GameDTO> deleteDesignerFromGame(@PathVariable Integer gameId, @PathVariable Integer gameByDesignerId) {
+    public ResponseEntity<GameDataDTO> deleteDesignerFromGame(@PathVariable Integer gameId, @PathVariable Integer gameByDesignerId) {
 
         gameByDesignerRepository.deleteById(gameByDesignerId);
 

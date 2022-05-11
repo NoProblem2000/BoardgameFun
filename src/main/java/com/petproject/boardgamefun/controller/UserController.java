@@ -1,7 +1,7 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.DiaryDTO;
-import com.petproject.boardgamefun.dto.GameDTO;
+import com.petproject.boardgamefun.dto.DiaryDataDTO;
+import com.petproject.boardgamefun.dto.GameDataDTO;
 import com.petproject.boardgamefun.dto.GameSellDTO;
 import com.petproject.boardgamefun.dto.UserDTO;
 import com.petproject.boardgamefun.dto.request.PasswordChangeRequest;
@@ -182,7 +182,7 @@ public class UserController {
     @GetMapping("{id}")
     public ResponseEntity<UserDTO> getUser(@PathVariable Integer id) {
         var userDTO = userService.entityToUserDTO(userRepository.findUserById(id));
-        if (userDTO.getUser() == null) {
+        if (userDTO == null) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(userDTO, HttpStatus.OK);
@@ -190,7 +190,7 @@ public class UserController {
 
     @Transactional
     @GetMapping("/{id}/games")
-    public ResponseEntity<List<GameDTO>> getUserCollection(@PathVariable Integer id) {
+    public ResponseEntity<List<GameDataDTO>> getUserCollection(@PathVariable Integer id) {
 
         var games = gameService.entitiesToGameDTO(gameRepository.findUserGames(id));
         return new ResponseEntity<>(games, HttpStatus.OK);
@@ -237,7 +237,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/games-rating")
-    public ResponseEntity<List<GameDTO>> getUserRatingList(@PathVariable Integer userId) {
+    public ResponseEntity<List<GameDataDTO>> getUserRatingList(@PathVariable Integer userId) {
 
         var ratingGamesByUser = gameService.userGameRatingToGameDTO(gameRepository.findUserGameRatingList(userId));
 
@@ -262,7 +262,7 @@ public class UserController {
     @Transactional
     @PostMapping("/{userId}/set-game-rating/{gameId}/{rating}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<Integer> setGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
+    public ResponseEntity<Double> setGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
 
         if (rating > 10 || rating < 1) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
@@ -280,18 +280,18 @@ public class UserController {
 
         gameRating.setGame(game);
         gameRating.setUser(user);
-        gameRating.setRating(rating);
+        gameRating.setRating(rating.doubleValue());
 
         ratingGameByUserRepository.save(gameRating);
 
 
-        return new ResponseEntity<>(rating, HttpStatus.OK);
+        return new ResponseEntity<>(rating.doubleValue(), HttpStatus.OK);
     }
 
     @Transactional
-    @PostMapping("/{userId}/update-game-rating/{gameId}/{rating}")
+    @PatchMapping("/{userId}/update-game-rating/{gameId}/{rating}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<Integer> updateGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
+    public ResponseEntity<Double> updateGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
 
         if (rating > 10 || rating < 1) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
@@ -301,14 +301,14 @@ public class UserController {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
 
-        ratingGameByUser.setRating(rating);
+        ratingGameByUser.setRating(rating.doubleValue());
         ratingGameByUserRepository.save(ratingGameByUser);
 
-        return new ResponseEntity<>(rating, HttpStatus.OK);
+        return new ResponseEntity<>(rating.doubleValue(), HttpStatus.OK);
     }
 
     @GetMapping("/{id}/wishlist")
-    public ResponseEntity<List<GameDTO>> getUserWishlist(@PathVariable Integer id) {
+    public ResponseEntity<List<GameDataDTO>> getUserWishlist(@PathVariable Integer id) {
         var games = gameService.entitiesToGameDTO(gameRepository.findUserWishlist(id));
         return new ResponseEntity<>(games, HttpStatus.OK);
     }
@@ -429,7 +429,7 @@ public class UserController {
     @Transactional
     @PostMapping("{userId}/add-diary/{gameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<DiaryDTO> addDiary(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody Diary diary) {
+    public ResponseEntity<DiaryDataDTO> addDiary(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody Diary diary) {
 
         if (diary == null || diary.getGame() == null) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
@@ -470,7 +470,7 @@ public class UserController {
     @Transactional
     @PutMapping({"{userId}/update-diary/{diaryId}"})
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<DiaryDTO> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest) {
+    public ResponseEntity<DiaryDataDTO> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest) {
 
         if (diaryRequest.getId() == null) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);

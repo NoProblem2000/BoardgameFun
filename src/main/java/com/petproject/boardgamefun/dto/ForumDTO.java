@@ -1,14 +1,8 @@
 package com.petproject.boardgamefun.dto;
 
-import com.petproject.boardgamefun.model.Forum;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.io.Serializable;
+import java.time.OffsetDateTime;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class ForumDTO {
-    private Forum forum;
-    private Double rating;
+public record ForumDTO(Integer id, String title, String text, OffsetDateTime publicationTime, GameDTO game,
+                       UserDTO user) implements Serializable {
 }

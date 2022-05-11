@@ -1,6 +1,6 @@
 package com.petproject.boardgamefun.controller;
 
-import com.petproject.boardgamefun.dto.ForumDTO;
+import com.petproject.boardgamefun.dto.ForumDataDTO;
 import com.petproject.boardgamefun.dto.ForumMessageDTO;
 import com.petproject.boardgamefun.dto.request.ForumMessageRequest;
 import com.petproject.boardgamefun.dto.request.ForumRatingRequest;
@@ -45,8 +45,8 @@ public class ForumController {
 
     @Transactional
     @GetMapping("")
-    public ResponseEntity<List<ForumDTO>> getForums(@RequestParam(required = false) Integer gameId, @RequestParam(required = false) Integer userId) {
-        List<ForumDTO> forums;
+    public ResponseEntity<List<ForumDataDTO>> getForums(@RequestParam(required = false) Integer gameId, @RequestParam(required = false) Integer userId) {
+        List<ForumDataDTO> forums;
         if (gameId != null) {
             forums = forumService.projectionsToForumDTO(forumRepository.findForumsGameWithRating(gameId));
         } else if (userId != null) {
@@ -60,7 +60,7 @@ public class ForumController {
 
     @Transactional
     @GetMapping("/{forumId}")
-    public ResponseEntity<ForumDTO> getForum(@PathVariable Integer forumId) {
+    public ResponseEntity<ForumDataDTO> getForum(@PathVariable Integer forumId) {
         var forum = forumService.projectionToForumDTO(forumRepository.findForumWithRatingUsingId(forumId));
 
         return new ResponseEntity<>(forum, HttpStatus.OK);
@@ -69,7 +69,7 @@ public class ForumController {
     @Transactional
     @PostMapping("add-forum/{gameId}/{userId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<ForumDTO> addForum(@PathVariable Integer gameId, @PathVariable Integer userId, @RequestBody ForumRequest forumRequest) {
+    public ResponseEntity<ForumDataDTO> addForum(@PathVariable Integer gameId, @PathVariable Integer userId, @RequestBody ForumRequest forumRequest) {
 
         var user = userRepository.findUserById(userId);
         var game = gameRepository.findGameById(gameId);
@@ -91,7 +91,7 @@ public class ForumController {
     @Transactional
     @PatchMapping("/update-forum/{forumId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<ForumDTO> updateForum(@PathVariable Integer forumId, @RequestBody ForumRequest forumRequest) {
+    public ResponseEntity<ForumDataDTO> updateForum(@PathVariable Integer forumId, @RequestBody ForumRequest forumRequest) {
         var forum = forumRepository.findForumById(forumId);
 
         if (forumRequest.getTitle() != null && !Objects.equals(forumRequest.getTitle(), forum.getTitle()))
@@ -186,7 +186,7 @@ public class ForumController {
     @Transactional
     @PostMapping("/{forumId}/set-rating/{userId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<ForumDTO> setForumRating(@PathVariable Integer forumId, @PathVariable Integer userId, @RequestBody ForumRatingRequest forumRatingRequest) {
+    public ResponseEntity<ForumDataDTO> setForumRating(@PathVariable Integer forumId, @PathVariable Integer userId, @RequestBody ForumRatingRequest forumRatingRequest) {
 
         var forumRating = forumRatingRepository.findForumRating_ByForumIdAndUserId(forumId, userId);
         if (forumRating == null) {
@@ -207,7 +207,7 @@ public class ForumController {
     @Transactional
     @DeleteMapping("/{forumId}/remove-rating/{ratingId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<ForumDTO> removeRatingFromForum(@PathVariable Integer forumId, @PathVariable Integer ratingId) {
+    public ResponseEntity<ForumDataDTO> removeRatingFromForum(@PathVariable Integer forumId, @PathVariable Integer ratingId) {
         var forumRating = forumRatingRepository.findForumRatingById(ratingId);
         forumRatingRepository.delete(forumRating);
 

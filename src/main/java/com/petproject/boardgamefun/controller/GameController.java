@@ -53,8 +53,11 @@ public class GameController {
     @Transactional
     @GetMapping("/get-game/{id}")
     public ResponseEntity<GameDataDTO> getGameByCriteria(@PathVariable Integer id) {
-        var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGame(id), designerRepository.findDesignersUsingGame(id));
-        return new ResponseEntity<>(gameDTO, HttpStatus.OK);
+        var gameDataDTO = gameService.projectionsToGameDTO(gameRepository.findGame(id), designerRepository.findDesignersUsingGame(id));
+        if (gameDataDTO == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(gameDataDTO, HttpStatus.OK);
     }
 
     @Transactional

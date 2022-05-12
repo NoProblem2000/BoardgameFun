@@ -7,10 +7,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.GameDataDTO;
+import com.petproject.boardgamefun.dto.projection.DesignersProjection;
 import com.petproject.boardgamefun.dto.projection.GameProjection;
 import com.petproject.boardgamefun.model.Designer;
+import com.petproject.boardgamefun.model.DesignerPOJO;
 import com.petproject.boardgamefun.model.Game;
 import com.petproject.boardgamefun.model.GamePOJO;
+import com.petproject.boardgamefun.repository.DesignerRepository;
 import com.petproject.boardgamefun.repository.GameRepository;
 import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.mappers.GameMapper;
@@ -32,10 +35,7 @@ import java.util.List;
 
 
 @ExtendWith(MockitoExtension.class)
-@SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.MOCK,
-        classes = SpringSecurityWebTestConfig.class
-)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, classes = SpringSecurityWebTestConfig.class)
 @AutoConfigureMockMvc
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -57,14 +57,20 @@ public class GameControllerTests {
     @MockBean
     private GameRepository gameRepository;
 
+    @MockBean
+    private DesignerRepository designerRepository;
+
 
     private Game game;
     private List<Game> games;
-    private GameProjection gamePOJO;
-    private List<GameProjection> gamePOJOList;
+    private GameProjection gameProjection;
+    private List<GameProjection> gameProjectionList;
     private GameDataDTO gameDataDTO;
     private List<GameDataDTO> gamesDataDTO;
     private Designer designer;
+    private List<DesignersProjection> designersProjectionList;
+    private DesignersProjection designersProjection;
+
     private DesignerDTO designerDTO;
 
 
@@ -105,9 +111,9 @@ public class GameControllerTests {
         games.add(game);
         games.add(game1);
 
-        gamePOJO = new GamePOJO(game, 8.0);
-        gamePOJOList = new ArrayList<>();
-        gamePOJOList.add(gamePOJO);
+        gameProjection = new GamePOJO(game, 8.0);
+        gameProjectionList = new ArrayList<>();
+        gameProjectionList.add(gameProjection);
 
         designer = new Designer();
         designer.setId(1);
@@ -120,6 +126,10 @@ public class GameControllerTests {
         List<String> designers = new ArrayList<>();
         designers.add(designer.getName());
         designers.add(designer2.getName());
+
+        designersProjectionList = new ArrayList<>();
+        designersProjectionList.add(new DesignerPOJO(designer.getName()));
+        designersProjectionList.add(new DesignerPOJO(designer2.getName()));
 
         gameDataDTO = new GameDataDTO(gameMapper.gameToGameDTO(game), 8.4, designers);
         designers.remove(1);
@@ -135,15 +145,15 @@ public class GameControllerTests {
     @Test
     public void getGamesShouldReturnOk() throws Exception {
 
-        when(gameRepository.findGames()).thenReturn(gamePOJOList);
-        when(gameService.projectionsToGameDTO(gamePOJOList)).thenReturn(gamesDataDTO);
+        when(gameRepository.findGames()).thenReturn(gameProjectionList);
+        when(gameService.projectionsToGameDTO(gameProjectionList)).thenReturn(gamesDataDTO);
 
         var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway)).andDo(print()).andExpect(status().isOk()).andReturn();
 
         var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
 
         verify(gameRepository).findGames();
-        verify(gameService).projectionsToGameDTO(gamePOJOList);
+        verify(gameService).projectionsToGameDTO(gameProjectionList);
 
         Assertions.assertEquals(res.length, 2);
 
@@ -164,6 +174,36 @@ public class GameControllerTests {
 
         Assertions.assertEquals(res.length, 0);
 
+    }
+
+    @Test
+    public void getGameByCriteriaShouldReturnOk() throws Exception {
+        when(gameRepository.findGame(1)).thenReturn(gameProjection);
+        when(designerRepository.findDesignersUsingGame(1)).thenReturn(designersProjectionList);
+        when(gameService.projectionsToGameDTO(gameProjection, designersProjectionList)).thenReturn(gameDataDTO);
+
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/get-game/1")).andDo(print()).andExpect(status().isOk()).andReturn();
+
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO.class);
+
+        verify(gameRepository).findGame(1);
+        verify(designerRepository).findDesignersUsingGame(1);
+        verify(gameService).projectionsToGameDTO(gameProjection, designersProjectionList);
+
+        Assertions.assertEquals(res.getGame().id(), gameDataDTO.getGame().id());
+    }
+
+    @Test
+    public void getGameByCriteriaShouldReturnNotFound() throws Exception {
+        when(gameRepository.findGame(-1)).thenReturn(null);
+        when(designerRepository.findDesignersUsingGame(-1)).thenReturn(null);
+        when(gameService.projectionsToGameDTO(null, null)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/get-game/-1")).andDo(print()).andExpect(status().isNotFound());
+
+        verify(gameRepository).findGame(-1);
+        verify(designerRepository).findDesignersUsingGame(-1);
+        verify(gameService).projectionsToGameDTO(null, null);
     }
 
 }

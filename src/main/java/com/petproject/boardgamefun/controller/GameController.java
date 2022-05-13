@@ -72,6 +72,12 @@ public class GameController {
     @PostMapping("/add")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<GameDataDTO> addGame(@RequestBody Game newGame) {
+        if (newGame.getId() != null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+        if (newGame.getTitle() == null || newGame.getAnnotation() == null || newGame.getDescription() == null || newGame.getTimeToPlayMax() == null || newGame.getTimeToPlayMin() == null || newGame.getYearOfRelease() == null || newGame.getPlayersMin() == null || newGame.getPlayersMax() == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
         gameRepository.save(newGame);
         var game = gameService.entityToGameDTO(newGame);
 

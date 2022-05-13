@@ -4,6 +4,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.FilterGamesDTO;
@@ -23,6 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -79,6 +82,7 @@ public class GameControllerTests {
 
         objectMapper = new ObjectMapper();
         objectMapper.findAndRegisterModules();
+        String instantExpected = "2014-12-22T10:15:30Z";
 
         game = new Game();
         game.setId(1);
@@ -91,7 +95,7 @@ public class GameControllerTests {
         game.setPlayersMax(5);
         game.setTimeToPlayMin(120);
         game.setTimeToPlayMax(360);
-        game.setYearOfRelease(OffsetDateTime.now());
+        game.setYearOfRelease(OffsetDateTime.parse(instantExpected));
 
 
         Game game1 = new Game();
@@ -105,7 +109,7 @@ public class GameControllerTests {
         game1.setPlayersMax(4);
         game1.setTimeToPlayMin(30);
         game1.setTimeToPlayMax(120);
-        game1.setYearOfRelease(OffsetDateTime.now());
+        game1.setYearOfRelease(OffsetDateTime.parse(instantExpected));
 
         games = new ArrayList<>();
         games.add(game);
@@ -239,6 +243,55 @@ public class GameControllerTests {
         verify(gameService).getTitlesFromProjections(new ArrayList<>());
 
         Assertions.assertEquals(0, res.length);
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void addGameShouldReturnOk() throws Exception {
+        game.setId(null);
+        when(gameRepository.save(game)).thenReturn(game);
+        when(gameService.entityToGameDTO(game)).thenReturn(gameDataDTO);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isOk());
+
+        verify(gameRepository).save(refEq(game));
+        verify(gameService).entityToGameDTO(refEq(game));
+        game.setId(1);
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void addGameShouldReturnBadRequest() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void addGameShouldReturnBadRequest_BadModel() throws Exception {
+        game.setTimeToPlayMax(null);
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isBadRequest());
+        game.setTimeToPlayMax(360);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addGameShouldReturnForbidden() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void addGameShouldReturnUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isUnauthorized());
     }
 
 }

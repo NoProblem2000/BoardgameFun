@@ -6,13 +6,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.dto.DesignerDTO;
+import com.petproject.boardgamefun.dto.FilterGamesDTO;
 import com.petproject.boardgamefun.dto.GameDataDTO;
 import com.petproject.boardgamefun.dto.projection.DesignersProjection;
 import com.petproject.boardgamefun.dto.projection.GameProjection;
-import com.petproject.boardgamefun.model.Designer;
-import com.petproject.boardgamefun.model.DesignerPOJO;
-import com.petproject.boardgamefun.model.Game;
-import com.petproject.boardgamefun.model.GamePOJO;
+import com.petproject.boardgamefun.dto.projection.GamesFilterByTitleProjection;
+import com.petproject.boardgamefun.model.*;
 import com.petproject.boardgamefun.repository.DesignerRepository;
 import com.petproject.boardgamefun.repository.GameRepository;
 import com.petproject.boardgamefun.service.GameService;
@@ -70,8 +69,9 @@ public class GameControllerTests {
     private Designer designer;
     private List<DesignersProjection> designersProjectionList;
     private DesignersProjection designersProjection;
-
     private DesignerDTO designerDTO;
+    private List<GamesFilterByTitleProjection> gamesFilterByTitleProjectionList;
+    List<FilterGamesDTO> filterGamesDTOList;
 
 
     @BeforeAll
@@ -139,6 +139,13 @@ public class GameControllerTests {
         gamesDataDTO.add(gameDataDTO);
         gamesDataDTO.add(gameDataDTO1);
 
+        gamesFilterByTitleProjectionList = new ArrayList<>();
+        gamesFilterByTitleProjectionList.add(new GameTitlePOJO("some title", 2));
+        gamesFilterByTitleProjectionList.add(new GameTitlePOJO("some title 2", 3));
+
+        filterGamesDTOList = new ArrayList<>();
+        filterGamesDTOList.add(new FilterGamesDTO(2, "some title"));
+        filterGamesDTOList.add(new FilterGamesDTO(3, "some title 2"));
 
     }
 
@@ -204,6 +211,34 @@ public class GameControllerTests {
         verify(gameRepository).findGame(-1);
         verify(designerRepository).findDesignersUsingGame(-1);
         verify(gameService).projectionsToGameDTO(null, null);
+    }
+
+    @Test
+    public void getGamesByTitleShouldReturnOk() throws Exception {
+        when(gameRepository.findGamesUsingTitle("title")).thenReturn(gamesFilterByTitleProjectionList);
+        when(gameService.getTitlesFromProjections(gamesFilterByTitleProjectionList)).thenReturn(filterGamesDTOList);
+
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/get-games-by-filter/title")).andDo(print()).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), FilterGamesDTO[].class);
+
+        verify(gameRepository).findGamesUsingTitle("title");
+        verify(gameService).getTitlesFromProjections(gamesFilterByTitleProjectionList);
+
+        Assertions.assertEquals(gamesFilterByTitleProjectionList.size(), res.length);
+    }
+
+    @Test
+    public void getGamesByTitleShouldReturnOk_BlankArray() throws Exception {
+        when(gameRepository.findGamesUsingTitle("title not exist")).thenReturn(new ArrayList<>());
+        when(gameService.getTitlesFromProjections(new ArrayList<>())).thenReturn(new ArrayList<>());
+
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/get-games-by-filter/title not exist")).andDo(print()).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), FilterGamesDTO[].class);
+
+        verify(gameRepository).findGamesUsingTitle("title not exist");
+        verify(gameService).getTitlesFromProjections(new ArrayList<>());
+
+        Assertions.assertEquals(0, res.length);
     }
 
 }

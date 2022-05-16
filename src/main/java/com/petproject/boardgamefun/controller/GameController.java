@@ -9,6 +9,7 @@ import com.petproject.boardgamefun.model.GameByDesigner;
 import com.petproject.boardgamefun.model.SameGame;
 import com.petproject.boardgamefun.repository.*;
 import com.petproject.boardgamefun.service.GameService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -75,13 +76,7 @@ public class GameController {
         if (newGame.getId() != null) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
-        if (newGame.getTitle() == null || newGame.getAnnotation() == null || newGame.getDescription() == null || newGame.getTimeToPlayMax() == null || newGame.getTimeToPlayMin() == null || newGame.getYearOfRelease() == null || newGame.getPlayersMin() == null || newGame.getPlayersMax() == null) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-        }
-        gameRepository.save(newGame);
-        var game = gameService.entityToGameDTO(newGame);
-
-        return new ResponseEntity<>(game, HttpStatus.OK);
+        return getGameDataDTOResponseEntity(newGame);
     }
 
     @Transactional
@@ -101,6 +96,14 @@ public class GameController {
     @PutMapping("/update")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<GameDataDTO> updateGame(@RequestBody Game updatedGame) {
+        return getGameDataDTOResponseEntity(updatedGame);
+    }
+
+    @NotNull
+    private ResponseEntity<GameDataDTO> getGameDataDTOResponseEntity(@RequestBody Game updatedGame) {
+        if (updatedGame.getTitle() == null || updatedGame.getAnnotation() == null || updatedGame.getDescription() == null || updatedGame.getTimeToPlayMax() == null || updatedGame.getTimeToPlayMin() == null || updatedGame.getYearOfRelease() == null || updatedGame.getPlayersMin() == null || updatedGame.getPlayersMax() == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
         gameRepository.save(updatedGame);
         var game = gameService.entityToGameDTO(updatedGame);
         return new ResponseEntity<>(game, HttpStatus.OK);

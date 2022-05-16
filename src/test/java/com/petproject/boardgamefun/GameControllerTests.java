@@ -4,6 +4,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.FilterGamesDTO;
@@ -369,6 +370,51 @@ public class GameControllerTests {
                 MockMvcRequestBuilders.multipart(Gateway + "/upload-image/-1");
         mockMvc.perform(multipartRequest.file(multipartFile))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void updateGameShouldReturnIsOk() throws Exception {
+        when(gameRepository.save(game)).thenReturn(null);
+        when(gameService.entityToGameDTO(game)).thenReturn(gameDataDTO);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/update").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isOk());
+
+        verify(gameRepository).save(refEq(game));
+        verify(gameService).entityToGameDTO(refEq(game));
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void updateGameShouldReturnIsBadRequest() throws Exception {
+        game.setTimeToPlayMax(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/update").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isBadRequest());
+
+        game.setTimeToPlayMax(360);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateGameShouldReturnIsForbidden() throws Exception {
+
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/update").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isForbidden());
+
+    }
+
+    @Test
+    public void updateGameShouldReturnIsUnauthorized() throws Exception {
+
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/update").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isUnauthorized());
+
     }
 
 }

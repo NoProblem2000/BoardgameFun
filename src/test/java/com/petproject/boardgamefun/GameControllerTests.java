@@ -417,4 +417,43 @@ public class GameControllerTests {
 
     }
 
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void removeGameFromSiteShouldReturnIsOk() throws Exception {
+        doNothing().when(gameRepository).delete(game);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/remove").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isOk());
+
+        verify(gameRepository).delete(refEq(game));
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void removeGameFromSiteShouldReturnNotFound() throws Exception {
+        game.setId(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/remove").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isNotFound());
+
+        game.setId(1);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void removeGameFromSiteShouldReturnNotForbidden() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/remove").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void removeGameFromSiteShouldReturnIsUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/remove").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isUnauthorized());
+    }
+
 }

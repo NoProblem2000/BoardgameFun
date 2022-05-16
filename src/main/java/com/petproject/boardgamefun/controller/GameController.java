@@ -113,6 +113,8 @@ public class GameController {
     @DeleteMapping("/remove")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> removeGameFromSite(@RequestBody Game deleteGame) {
+        if (deleteGame.getId() == null)
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         gameRepository.delete(deleteGame);
 
         return new ResponseEntity<>(deleteGame.getTitle() + " удалена из базы данных", HttpStatus.OK);

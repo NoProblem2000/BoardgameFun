@@ -4,7 +4,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.FilterGamesDTO;
@@ -25,9 +24,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
 
 import static org.mockito.Mockito.*;
 
@@ -45,6 +48,9 @@ public class GameControllerTests {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private WebApplicationContext webApplicationContext;
 
     private final String Gateway = "/games";
 
@@ -74,14 +80,21 @@ public class GameControllerTests {
     private DesignersProjection designersProjection;
     private DesignerDTO designerDTO;
     private List<GamesFilterByTitleProjection> gamesFilterByTitleProjectionList;
-    List<FilterGamesDTO> filterGamesDTOList;
-
+    private List<FilterGamesDTO> filterGamesDTOList;
+    private MockMultipartFile multipartFile;
 
     @BeforeAll
     public void setup() {
 
         objectMapper = new ObjectMapper();
         objectMapper.findAndRegisterModules();
+        multipartFile = new MockMultipartFile(
+                "picture",
+                "hello.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "0x36".getBytes()
+        );
+
         String instantExpected = "2014-12-22T10:15:30Z";
 
         game = new Game();
@@ -189,7 +202,7 @@ public class GameControllerTests {
 
     @Test
     public void getGameByCriteriaShouldReturnOk() throws Exception {
-        when(gameRepository.findGame(1)).thenReturn(gameProjection);
+        when(gameRepository.findGameWithRating(1)).thenReturn(gameProjection);
         when(designerRepository.findDesignersUsingGame(1)).thenReturn(designersProjectionList);
         when(gameService.projectionsToGameDTO(gameProjection, designersProjectionList)).thenReturn(gameDataDTO);
 
@@ -197,7 +210,7 @@ public class GameControllerTests {
 
         var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO.class);
 
-        verify(gameRepository).findGame(1);
+        verify(gameRepository).findGameWithRating(1);
         verify(designerRepository).findDesignersUsingGame(1);
         verify(gameService).projectionsToGameDTO(gameProjection, designersProjectionList);
 
@@ -206,13 +219,13 @@ public class GameControllerTests {
 
     @Test
     public void getGameByCriteriaShouldReturnNotFound() throws Exception {
-        when(gameRepository.findGame(-1)).thenReturn(null);
+        when(gameRepository.findGameWithRating(-1)).thenReturn(null);
         when(designerRepository.findDesignersUsingGame(-1)).thenReturn(null);
         when(gameService.projectionsToGameDTO(null, null)).thenReturn(null);
 
         this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/get-game/-1")).andDo(print()).andExpect(status().isNotFound());
 
-        verify(gameRepository).findGame(-1);
+        verify(gameRepository).findGameWithRating(-1);
         verify(designerRepository).findDesignersUsingGame(-1);
         verify(gameService).projectionsToGameDTO(null, null);
     }
@@ -292,6 +305,70 @@ public class GameControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(game))).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void uploadImageShouldReturnIsOk() throws Exception {
+        when(gameRepository.findGameById(1)).thenReturn(game);
+        when(gameRepository.save(game)).thenReturn(null);
+        when(gameRepository.findGameWithRating(1)).thenReturn(gameProjection);
+        when(designerRepository.findDesignersUsingGame(1)).thenReturn(designersProjectionList);
+        when(gameService.projectionsToGameDTO(gameProjection, designersProjectionList)).thenReturn(gameDataDTO);
+
+        MockMultipartHttpServletRequestBuilder multipartRequest =
+                MockMvcRequestBuilders.multipart(Gateway + "/upload-image/1");
+        mockMvc.perform(multipartRequest.file(multipartFile))
+                .andExpect(status().isOk());
+
+        verify(gameRepository).findGameById(1);
+        verify(gameRepository).save(game);
+        verify(gameRepository).findGameWithRating(1);
+        verify(designerRepository).findDesignersUsingGame(1);
+        verify(gameService).projectionsToGameDTO(gameProjection, designersProjectionList);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void uploadImageShouldReturnNotFound() throws Exception {
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+
+        MockMultipartHttpServletRequestBuilder multipartRequest =
+                MockMvcRequestBuilders.multipart(Gateway + "/upload-image/-1");
+        mockMvc.perform(multipartRequest.file(multipartFile))
+                .andExpect(status().isNotFound());
+
+        verify(gameRepository).findGameById(-1);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void uploadImageShouldReturnBadRequest() throws Exception {
+        multipartFile = new MockMultipartFile(
+                "not-picture",
+                "hello.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "0x36".getBytes()
+        );
+        MockMultipartHttpServletRequestBuilder multipartRequest =
+                MockMvcRequestBuilders.multipart(Gateway + "/upload-image/-1");
+        mockMvc.perform(multipartRequest.file(multipartFile))
+                .andExpect(status().isBadRequest());
+
+        multipartFile = new MockMultipartFile(
+                "picture",
+                "hello.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "0x36".getBytes()
+        );
+    }
+
+    @Test
+    public void uploadImageShouldReturnUnauthorized() throws Exception {
+        MockMultipartHttpServletRequestBuilder multipartRequest =
+                MockMvcRequestBuilders.multipart(Gateway + "/upload-image/-1");
+        mockMvc.perform(multipartRequest.file(multipartFile))
+                .andExpect(status().isUnauthorized());
     }
 
 }

@@ -17,7 +17,7 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
             "left join RatingGameByUser rgbu on rgbu.game.id = g.id " +
             "where g.id = :id " +
             "group by g")
-    GameProjection findGame(Integer id);
+    GameProjection findGameWithRating(Integer id);
 
     @Query("select g.title as title, g.id as id from Game g " +
             "where lower(g.title) like :title%")

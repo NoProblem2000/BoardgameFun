@@ -53,7 +53,7 @@ public class GameController {
     @Transactional
     @GetMapping("/get-game/{id}")
     public ResponseEntity<GameDataDTO> getGameByCriteria(@PathVariable Integer id) {
-        var gameDataDTO = gameService.projectionsToGameDTO(gameRepository.findGame(id), designerRepository.findDesignersUsingGame(id));
+        var gameDataDTO = gameService.projectionsToGameDTO(gameRepository.findGameWithRating(id), designerRepository.findDesignersUsingGame(id));
         if (gameDataDTO == null) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
@@ -89,9 +89,11 @@ public class GameController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<GameDataDTO> uploadImage(@PathVariable Integer gameId, @RequestParam("picture") MultipartFile file) throws IOException {
         var game = gameRepository.findGameById(gameId);
+        if (game == null)
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         game.setPicture(file.getBytes());
         gameRepository.save(game);
-        var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGame(gameId), designerRepository.findDesignersUsingGame(gameId));
+        var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGameWithRating(gameId), designerRepository.findDesignersUsingGame(gameId));
         return new ResponseEntity<>(gameDTO, HttpStatus.OK);
     }
 
@@ -211,7 +213,7 @@ public class GameController {
 
         gameByDesignerRepository.save(gameByDesigner);
 
-        var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGame(gameId),
+        var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGameWithRating(gameId),
                 designerRepository.findDesignersUsingGame(gameId));
 
         return new ResponseEntity<>(gameDTO, HttpStatus.OK);
@@ -224,7 +226,7 @@ public class GameController {
 
         gameByDesignerRepository.deleteById(gameByDesignerId);
 
-        var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGame(gameId),
+        var gameDTO = gameService.projectionsToGameDTO(gameRepository.findGameWithRating(gameId),
                 designerRepository.findDesignersUsingGame(gameId));
 
         return new ResponseEntity<>(gameDTO, HttpStatus.OK);

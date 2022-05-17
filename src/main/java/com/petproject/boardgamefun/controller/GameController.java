@@ -123,6 +123,8 @@ public class GameController {
     @Transactional
     @GetMapping("/expansions/{gameId}")
     public ResponseEntity<List<GameDataDTO>> getExpansions(@PathVariable Integer gameId) {
+        if (gameId == null)
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         var gamesExpansions = gameService.entitiesToGameDTO(gameRepository.getExpansions(gameId));
 
         return new ResponseEntity<>(gamesExpansions, HttpStatus.OK);

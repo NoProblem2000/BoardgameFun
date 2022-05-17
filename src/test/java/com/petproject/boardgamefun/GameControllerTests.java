@@ -4,7 +4,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.FilterGamesDTO;
@@ -454,6 +453,39 @@ public class GameControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/remove").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(game))).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void getExpansionsShouldReturnIsOk() throws Exception {
+        when(gameRepository.getExpansions(1)).thenReturn(games);
+        when(gameService.entitiesToGameDTO(games)).thenReturn(gamesDataDTO);
+
+        var mvsRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/expansions/1")).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvsRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
+
+        verify(gameRepository).getExpansions(1);
+        verify(gameService).entitiesToGameDTO(games);
+
+        Assertions.assertEquals(gamesDataDTO.size(), res.length);
+    }
+
+    @Test
+    public void getExpansionsShouldReturnIsOk_BlankArray() throws Exception {
+        when(gameRepository.getExpansions(-1)).thenReturn(new ArrayList<>());
+        when(gameService.entitiesToGameDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
+
+        var mvsRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/expansions/-1")).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvsRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
+
+        verify(gameRepository).getExpansions(-1);
+        verify(gameService).entitiesToGameDTO(new ArrayList<>());
+
+        Assertions.assertEquals(0, res.length);
+    }
+
+    @Test
+    public void getExpansionsShouldReturnIsNotFound() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/expansions/")).andExpect(status().isNotFound());
     }
 
 }

@@ -13,6 +13,7 @@ import com.petproject.boardgamefun.dto.projection.GameProjection;
 import com.petproject.boardgamefun.dto.projection.GamesFilterByTitleProjection;
 import com.petproject.boardgamefun.model.*;
 import com.petproject.boardgamefun.repository.DesignerRepository;
+import com.petproject.boardgamefun.repository.ExpansionRepository;
 import com.petproject.boardgamefun.repository.GameRepository;
 import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.mappers.GameMapper;
@@ -68,8 +69,11 @@ public class GameControllerTests {
     @MockBean
     private DesignerRepository designerRepository;
 
+    @MockBean
+    private ExpansionRepository expansionRepository;
 
     private Game game;
+    private Game game2;
     private List<Game> games;
     private GameProjection gameProjection;
     private List<GameProjection> gameProjectionList;
@@ -82,6 +86,7 @@ public class GameControllerTests {
     private List<GamesFilterByTitleProjection> gamesFilterByTitleProjectionList;
     private List<FilterGamesDTO> filterGamesDTOList;
     private MockMultipartFile multipartFile;
+    private Expansion expansion;
 
     @BeforeAll
     public void setup() {
@@ -111,22 +116,27 @@ public class GameControllerTests {
         game.setYearOfRelease(OffsetDateTime.parse(instantExpected));
 
 
-        Game game1 = new Game();
-        game1.setId(1);
-        game1.setTitle(" Игра номер 2");
-        game1.setDescription("Отличная игра войнушка номер 2");
-        game1.setAnnotation("Отличная игра номер 2");
-        game1.setPicture(null);
-        game1.setPlayerAge("16");
-        game1.setPlayersMin(2);
-        game1.setPlayersMax(4);
-        game1.setTimeToPlayMin(30);
-        game1.setTimeToPlayMax(120);
-        game1.setYearOfRelease(OffsetDateTime.parse(instantExpected));
+        game2 = new Game();
+        game2.setId(1);
+        game2.setTitle(" Игра номер 2");
+        game2.setDescription("Отличная игра войнушка номер 2");
+        game2.setAnnotation("Отличная игра номер 2");
+        game2.setPicture(null);
+        game2.setPlayerAge("16");
+        game2.setPlayersMin(2);
+        game2.setPlayersMax(4);
+        game2.setTimeToPlayMin(30);
+        game2.setTimeToPlayMax(120);
+        game2.setYearOfRelease(OffsetDateTime.parse(instantExpected));
 
         games = new ArrayList<>();
         games.add(game);
-        games.add(game1);
+        games.add(game2);
+
+        expansion = new Expansion();
+        expansion.setId(1);
+        expansion.setParentGame(game);
+        expansion.setDaughterGame(game2);
 
         gameProjection = new GamePOJO(game, 8.0);
         gameProjectionList = new ArrayList<>();
@@ -486,6 +496,68 @@ public class GameControllerTests {
     @Test
     public void getExpansionsShouldReturnIsNotFound() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/expansions/")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addExpansionShouldReturnIsOk() throws Exception {
+        when(gameRepository.findGameById(1)).thenReturn(game);
+        when(gameRepository.findGameById(2)).thenReturn(game2);
+        when(expansionRepository.save(any(Expansion.class))).thenReturn(expansion);
+        when(gameRepository.getExpansions(1)).thenReturn(games);
+        when(gameService.entitiesToGameDTO(games)).thenReturn(gamesDataDTO);
+
+        var mvsRes = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-expansion/1/2")).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvsRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
+
+        verify(gameRepository).findGameById(1);
+        verify(gameRepository).findGameById(2);
+        verify(expansionRepository).save(any(Expansion.class));
+        verify(gameRepository).getExpansions(1);
+        verify(gameService).entitiesToGameDTO(games);
+
+        Assertions.assertEquals(gamesDataDTO.size(), res.length);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addExpansionShouldReturnIsBadRequest_ParentGame() throws Exception {
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+        when(gameRepository.findGameById(2)).thenReturn(game2);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-expansion/-1/2")).andExpect(status().isBadRequest());
+
+        verify(gameRepository).findGameById(-1);
+        verify(gameRepository).findGameById(2);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addExpansionShouldReturnIsBadRequest_DaughterGame() throws Exception {
+        when(gameRepository.findGameById(1)).thenReturn(game);
+        when(gameRepository.findGameById(-2)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-expansion/1/-2")).andExpect(status().isBadRequest());
+
+        verify(gameRepository).findGameById(1);
+        verify(gameRepository).findGameById(-2);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addExpansionShouldReturnIsBadRequest_BothGame() throws Exception {
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+        when(gameRepository.findGameById(-2)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-expansion/-1/-2")).andExpect(status().isBadRequest());
+
+        verify(gameRepository).findGameById(-1);
+        verify(gameRepository).findGameById(-2);
+    }
+
+    @Test
+    public void addExpansionShouldReturnIsUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-expansion/1/2")).andExpect(status().isUnauthorized()).andReturn();
     }
 
 }

@@ -137,6 +137,10 @@ public class GameController {
         var parentGame = gameRepository.findGameById(parentGameId);
         var daughterGame = gameRepository.findGameById(daughterGameId);
 
+        if (parentGame == null || daughterGame == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
         var expansion = new Expansion();
         expansion.setParentGame(parentGame);
         expansion.setDaughterGame(daughterGame);

@@ -594,4 +594,38 @@ public class GameControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-expansion/1/2")).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    public void getSimilarGamesShouldReturnIsOk() throws Exception {
+        when(gameRepository.getSimilarGames(1)).thenReturn(games);
+        when(gameService.entitiesToGameDTO(games)).thenReturn(gamesDataDTO);
+
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/similar/1")).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
+
+        verify(gameRepository).getSimilarGames(1);
+        verify(gameService).entitiesToGameDTO(games);
+
+        Assertions.assertEquals(games.size(), res.length);
+
+    }
+
+    @Test
+    public void getSimilarGamesShouldReturnIsOk_BlankArray() throws Exception {
+        when(gameRepository.getSimilarGames(-1)).thenReturn(new ArrayList<>());
+        when(gameService.entitiesToGameDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
+
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/similar/-1")).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
+
+        verify(gameRepository).getSimilarGames(-1);
+        verify(gameService).entitiesToGameDTO(new ArrayList<>());
+
+        Assertions.assertEquals(0, res.length);
+    }
+
+    @Test
+    public void getSimilarGamesShouldReturnIsNotFound() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/similar/")).andExpect(status().isNotFound()).andReturn();
+    }
+
 }

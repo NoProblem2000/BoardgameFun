@@ -169,6 +169,8 @@ public class GameController {
     @Transactional
     @GetMapping("/similar/{gameId}")
     public ResponseEntity<List<GameDataDTO>> getSimilarGames(@PathVariable Integer gameId) {
+        if (gameId == null)
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         var similarGames = gameService.entitiesToGameDTO(gameRepository.getSimilarGames(gameId));
 
         return new ResponseEntity<>(similarGames, HttpStatus.OK);

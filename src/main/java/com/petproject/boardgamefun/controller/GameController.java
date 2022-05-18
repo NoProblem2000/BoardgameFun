@@ -183,6 +183,9 @@ public class GameController {
         var referenceGame = gameRepository.findGameById(referenceGameId);
         var sourceGame = gameRepository.findGameById(sourceGameId);
 
+        if (referenceGame == null || sourceGame == null)
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+
         var sameGame = new SameGame();
         sameGame.setReferenceGame(referenceGame);
         sameGame.setSourceGame(sourceGame);

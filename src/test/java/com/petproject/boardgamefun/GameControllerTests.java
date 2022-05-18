@@ -15,6 +15,7 @@ import com.petproject.boardgamefun.model.*;
 import com.petproject.boardgamefun.repository.DesignerRepository;
 import com.petproject.boardgamefun.repository.ExpansionRepository;
 import com.petproject.boardgamefun.repository.GameRepository;
+import com.petproject.boardgamefun.repository.SameGameRepository;
 import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.mappers.GameMapper;
 import org.junit.jupiter.api.*;
@@ -72,6 +73,9 @@ public class GameControllerTests {
     @MockBean
     private ExpansionRepository expansionRepository;
 
+    @MockBean
+    private SameGameRepository sameGameRepository;
+
     private Game game;
     private Game game2;
     private List<Game> games;
@@ -87,6 +91,8 @@ public class GameControllerTests {
     private List<FilterGamesDTO> filterGamesDTOList;
     private MockMultipartFile multipartFile;
     private Expansion expansion;
+
+    private SameGame sameGame;
 
     @BeforeAll
     public void setup() {
@@ -137,6 +143,11 @@ public class GameControllerTests {
         expansion.setId(1);
         expansion.setParentGame(game);
         expansion.setDaughterGame(game2);
+
+        sameGame = new SameGame();
+        sameGame.setId(1);
+        sameGame.setSourceGame(game);
+        sameGame.setReferenceGame(game2);
 
         gameProjection = new GamePOJO(game, 8.0);
         gameProjectionList = new ArrayList<>();
@@ -628,4 +639,66 @@ public class GameControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/similar/")).andExpect(status().isNotFound()).andReturn();
     }
 
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addSimilarGameShouldReturnIsOk() throws Exception {
+        when(gameRepository.findGameById(1)).thenReturn(game);
+        when(gameRepository.findGameById(2)).thenReturn(game2);
+        when(sameGameRepository.save(any(SameGame.class))).thenReturn(sameGame);
+        when(gameRepository.getSimilarGames(1)).thenReturn(games);
+        when(gameService.entitiesToGameDTO(games)).thenReturn(gamesDataDTO);
+
+        var mvsRes = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-similar/1/2")).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvsRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
+
+        verify(gameRepository).findGameById(1);
+        verify(gameRepository).findGameById(2);
+        verify(sameGameRepository).save(any(SameGame.class));
+        verify(gameRepository).getSimilarGames(1);
+        verify(gameService).entitiesToGameDTO(games);
+
+        Assertions.assertEquals(gamesDataDTO.size(), res.length);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addSimilarGameShouldReturnIsBadRequest_ReferenceGame() throws Exception {
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+        when(gameRepository.findGameById(2)).thenReturn(game2);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-similar/-1/2")).andExpect(status().isBadRequest());
+
+        verify(gameRepository).findGameById(-1);
+        verify(gameRepository).findGameById(2);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addSimilarShouldGameReturnIsBadRequest_SourceGame() throws Exception {
+        when(gameRepository.findGameById(1)).thenReturn(game);
+        when(gameRepository.findGameById(-2)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-similar/1/-2")).andExpect(status().isBadRequest());
+
+        verify(gameRepository).findGameById(1);
+        verify(gameRepository).findGameById(-2);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addSimilarGameShouldReturnIsBadRequest_BothGame() throws Exception {
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+        when(gameRepository.findGameById(-2)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-similar/-1/-2")).andExpect(status().isBadRequest());
+
+        verify(gameRepository).findGameById(-1);
+        verify(gameRepository).findGameById(-2);
+    }
+
+    @Test
+    public void addSimilarGameShouldReturnIsUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-similar/1/2")).andExpect(status().isUnauthorized()).andReturn();
+    }
 }

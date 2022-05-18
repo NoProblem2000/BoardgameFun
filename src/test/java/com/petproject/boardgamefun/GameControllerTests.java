@@ -560,4 +560,38 @@ public class GameControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-expansion/1/2")).andExpect(status().isUnauthorized()).andReturn();
     }
 
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteExpansionShouldReturnIsOk() throws Exception {
+        when(expansionRepository.findExpansion_ByParentGameIdAndDaughterGameId(1, 2)).thenReturn(expansion);
+        doNothing().when(expansionRepository).delete(expansion);
+        when(gameRepository.getExpansions(1)).thenReturn(games);
+        when(gameService.entitiesToGameDTO(games)).thenReturn(gamesDataDTO);
+
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-expansion/1/2")).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
+
+        verify(expansionRepository).findExpansion_ByParentGameIdAndDaughterGameId(1, 2);
+        verify(expansionRepository).delete(expansion);
+        verify(gameRepository).getExpansions(1);
+        verify(gameService).entitiesToGameDTO(games);
+
+        Assertions.assertEquals(gamesDataDTO.size(), res.length);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteExpansionShouldReturnIsNotFound() throws Exception {
+        when(expansionRepository.findExpansion_ByParentGameIdAndDaughterGameId(-1, -2)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-expansion/-1/-2")).andExpect(status().isNotFound());
+
+        verify(expansionRepository).findExpansion_ByParentGameIdAndDaughterGameId(-1, -2);
+    }
+
+    @Test
+    public void deleteExpansionShouldReturnIsUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-expansion/1/2")).andExpect(status().isUnauthorized());
+    }
+
 }

@@ -154,8 +154,11 @@ public class GameController {
     @Transactional
     @DeleteMapping("/delete-expansion/{parentGameId}/{daughterGameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<List<GameDataDTO>> deleteExpansion(@PathVariable Integer daughterGameId, @PathVariable Integer parentGameId) {
-        var expansion = expansionRepository.findExpansion_ByDaughterGameIdAndParentGameId(daughterGameId, parentGameId);
+    public ResponseEntity<List<GameDataDTO>> deleteExpansion(@PathVariable Integer parentGameId, @PathVariable Integer daughterGameId) {
+        var expansion = expansionRepository.findExpansion_ByParentGameIdAndDaughterGameId(parentGameId, daughterGameId);
+        if (expansion == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
         expansionRepository.delete(expansion);
 
         var gamesExpansions = gameService.entitiesToGameDTO(gameRepository.getExpansions(parentGameId));

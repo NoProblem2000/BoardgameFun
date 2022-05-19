@@ -908,6 +908,30 @@ public class GameControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/set-designer/-1")).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteDesignerFromGameShouldReturnIsOk() throws Exception {
+        doNothing().when(gameByDesignerRepository).deleteById(1);
+        when(gameRepository.findGameWithRating(1)).thenReturn(gameProjection);
+        when(designerRepository.findDesignersUsingGame(1)).thenReturn(designersProjectionList);
+        when(gameService.projectionsToGameDTO(gameProjection, designersProjectionList)).thenReturn(gameDataDTO);
+
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/1/remove-designer/1")).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO.class);
+
+        verify(gameByDesignerRepository).deleteById(1);
+        verify(gameRepository).findGameWithRating(1);
+        verify(designerRepository).findDesignersUsingGame(1);
+        verify(gameService).projectionsToGameDTO(gameProjection, designersProjectionList);
+
+        Assertions.assertEquals(gameDataDTO.getGame().id(), res.getGame().id());
+    }
+
+    @Test
+    public void deleteDesignerFromGameShouldReturnIsUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/1/remove-designer/1")).andExpect(status().isUnauthorized());
+    }
+
 
     //todo: union beforeAll method?
 }

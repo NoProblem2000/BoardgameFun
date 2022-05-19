@@ -23,6 +23,8 @@ public class GameService {
     }
 
     public GameDataDTO projectionsToGameDTO(GameProjection gameProjection, List<DesignersProjection> designersProjection) {
+        if (gameProjection == null)
+            return null;
         return new GameDataDTO(gameMapper.gameToGameDTO(gameProjection.getGame()),
                 gameProjection.getRating(),
                 designersProjection.stream().map(DesignersProjection::getDesigner).collect(Collectors.toList()));

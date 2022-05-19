@@ -8,14 +8,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.FilterGamesDTO;
 import com.petproject.boardgamefun.dto.GameDataDTO;
+import com.petproject.boardgamefun.dto.RatingGameByUserDTO;
 import com.petproject.boardgamefun.dto.projection.DesignersProjection;
 import com.petproject.boardgamefun.dto.projection.GameProjection;
 import com.petproject.boardgamefun.dto.projection.GamesFilterByTitleProjection;
+import com.petproject.boardgamefun.dto.projection.UsersGameRatingProjection;
 import com.petproject.boardgamefun.model.*;
-import com.petproject.boardgamefun.repository.DesignerRepository;
-import com.petproject.boardgamefun.repository.ExpansionRepository;
-import com.petproject.boardgamefun.repository.GameRepository;
-import com.petproject.boardgamefun.repository.SameGameRepository;
+import com.petproject.boardgamefun.repository.*;
 import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.mappers.GameMapper;
 import org.junit.jupiter.api.*;
@@ -76,6 +75,9 @@ public class GameControllerTests {
     @MockBean
     private SameGameRepository sameGameRepository;
 
+    @MockBean
+    private UserRepository userRepository;
+
     private Game game;
     private Game game2;
     private List<Game> games;
@@ -91,6 +93,11 @@ public class GameControllerTests {
     private List<FilterGamesDTO> filterGamesDTOList;
     private MockMultipartFile multipartFile;
     private Expansion expansion;
+    private List<UsersGameRatingProjection> usersGameRatingProjectionList;
+    private User userAdmin;
+    private User userModerator;
+    private User user;
+    private List<RatingGameByUserDTO> ratingGameByUserDTOList;
 
     private SameGame sameGame;
 
@@ -185,6 +192,43 @@ public class GameControllerTests {
         filterGamesDTOList.add(new FilterGamesDTO(2, "some title"));
         filterGamesDTOList.add(new FilterGamesDTO(3, "some title 2"));
 
+
+        userAdmin = new User();
+        userAdmin.setId(11);
+        userAdmin.setName("Alice");
+        userAdmin.setPassword("pswd");
+        userAdmin.setRole("ADMIN");
+        userAdmin.setMail("alicealisson@ggogle.com");
+        userAdmin.setRating(1.0);
+        userAdmin.setRegistrationDate(OffsetDateTime.now());
+
+        userModerator = new User();
+        userModerator.setId(14);
+        userModerator.setName("Sam");
+        userModerator.setPassword("pswdsam");
+        userModerator.setRole("MODERATOR");
+        userModerator.setMail("samwinchester@ggogle.com");
+        userModerator.setRating(1.0);
+        userModerator.setRegistrationDate(OffsetDateTime.now());
+
+        user = new User();
+        user.setId(34);
+        user.setName("Bobby");
+        user.setPassword("1234qwer");
+        user.setRole("USER");
+        user.setMail("bobby@ggogle.com");
+        user.setRating(1.0);
+        user.setRegistrationDate(OffsetDateTime.now());
+
+        usersGameRatingProjectionList = new ArrayList<>();
+        usersGameRatingProjectionList.add(new UsersGameRatingProjectionPOJO(user, 8.0));
+        usersGameRatingProjectionList.add(new UsersGameRatingProjectionPOJO(userAdmin, 10.0));
+        usersGameRatingProjectionList.add(new UsersGameRatingProjectionPOJO(userModerator, 3.0));
+
+        ratingGameByUserDTOList = new ArrayList<>();
+        ratingGameByUserDTOList.add(new RatingGameByUserDTO(user.getId(), 8.0));
+        ratingGameByUserDTOList.add(new RatingGameByUserDTO(userModerator.getId(), 10.0));
+        ratingGameByUserDTOList.add(new RatingGameByUserDTO(userAdmin.getId(), 3.0));
     }
 
     @Test
@@ -758,4 +802,35 @@ public class GameControllerTests {
     public void deleteSameGameShouldReturnIsUnauthorized() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-similar/1/2")).andExpect(status().isUnauthorized());
     }
+
+    @Test
+    public void getUsersRatingShouldReturnIsOk() throws Exception {
+        when(userRepository.findGameRatings(1)).thenReturn(usersGameRatingProjectionList);
+        when(gameService.usersGameRatingToDTO(usersGameRatingProjectionList)).thenReturn(ratingGameByUserDTOList);
+
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1/users-rating")).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), RatingGameByUserDTO[].class);
+
+        verify(userRepository).findGameRatings(1);
+        verify(gameService).usersGameRatingToDTO(usersGameRatingProjectionList);
+
+        Assertions.assertEquals(ratingGameByUserDTOList.size(), res.length);
+    }
+
+    @Test
+    public void getUsersRatingShouldReturnIsOk_BlankArray() throws Exception {
+        when(userRepository.findGameRatings(1)).thenReturn(new ArrayList<>());
+        when(gameService.usersGameRatingToDTO(new ArrayList<>())).thenReturn(new ArrayList<>());
+
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1/users-rating")).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), RatingGameByUserDTO[].class);
+
+        verify(userRepository).findGameRatings(1);
+        verify(gameService).usersGameRatingToDTO(new ArrayList<>());
+
+        Assertions.assertEquals(0, res.length);
+    }
+
+
+    //todo: union beforeAll method?
 }

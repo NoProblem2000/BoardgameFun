@@ -229,6 +229,10 @@ public class GameController {
         var game = gameRepository.findGameById(gameId);
         var designer = designerRepository.findDesignerById(designerId);
 
+        if (game == null || designer == null){
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+
         var gameByDesigner = new GameByDesigner();
         gameByDesigner.setDesigner(designer);
         gameByDesigner.setGame(game);

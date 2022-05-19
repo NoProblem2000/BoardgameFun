@@ -78,6 +78,9 @@ public class GameControllerTests {
     @MockBean
     private UserRepository userRepository;
 
+    @MockBean
+    private GameByDesignerRepository gameByDesignerRepository;
+
     private Game game;
     private Game game2;
     private List<Game> games;
@@ -100,6 +103,7 @@ public class GameControllerTests {
     private List<RatingGameByUserDTO> ratingGameByUserDTOList;
 
     private SameGame sameGame;
+    private GameByDesigner gameByDesigner;
 
     @BeforeAll
     public void setup() {
@@ -229,6 +233,11 @@ public class GameControllerTests {
         ratingGameByUserDTOList.add(new RatingGameByUserDTO(user.getId(), 8.0));
         ratingGameByUserDTOList.add(new RatingGameByUserDTO(userModerator.getId(), 10.0));
         ratingGameByUserDTOList.add(new RatingGameByUserDTO(userAdmin.getId(), 3.0));
+
+        gameByDesigner = new GameByDesigner();
+        gameByDesigner.setId(1);
+        gameByDesigner.setGame(game);
+        gameByDesigner.setDesigner(designer);
     }
 
     @Test
@@ -829,6 +838,74 @@ public class GameControllerTests {
         verify(gameService).usersGameRatingToDTO(new ArrayList<>());
 
         Assertions.assertEquals(0, res.length);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addDesignerToGameRatingShouldReturnIsOk() throws Exception {
+        when(gameRepository.findGameById(1)).thenReturn(game);
+        when(designerRepository.findDesignerById(1)).thenReturn(designer);
+        when(gameByDesignerRepository.save(any(GameByDesigner.class))).thenReturn(null);
+        when(gameRepository.findGameWithRating(1)).thenReturn(gameProjection);
+        when(designerRepository.findDesignersUsingGame(1)).thenReturn(designersProjectionList);
+        when(gameService.projectionsToGameDTO(gameProjection, designersProjectionList)).thenReturn(gameDataDTO);
+
+
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/set-designer/1")).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO.class);
+
+        verify(gameRepository).findGameById(1);
+        verify(designerRepository).findDesignerById(1);
+        verify(gameByDesignerRepository).save(any(GameByDesigner.class));
+        verify(gameRepository).findGameWithRating(1);
+        verify(designerRepository).findDesignersUsingGame(1);
+        verify(gameService).projectionsToGameDTO(gameProjection, designersProjectionList);
+
+        Assertions.assertEquals(gameDataDTO.getGame().id(), res.getGame().id());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addDesignerToGameRatingShouldReturnIsNotFound_Game() throws Exception {
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+        when(designerRepository.findDesignerById(1)).thenReturn(designer);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/set-designer/1")).andExpect(status().isNotFound());
+
+        verify(gameRepository).findGameById(-1);
+        verify(designerRepository).findDesignerById(1);
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addDesignerToGameRatingShouldReturnIsNotFound_Designer() throws Exception {
+        when(gameRepository.findGameById(1)).thenReturn(game);
+        when(designerRepository.findDesignerById(-1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/1/set-designer/-1")).andExpect(status().isNotFound());
+
+        verify(gameRepository).findGameById(1);
+        verify(designerRepository).findDesignerById(-1);
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addDesignerToGameRatingShouldReturnIsNotFound_Both() throws Exception {
+        when(gameRepository.findGameById(-1)).thenReturn(null);
+        when(designerRepository.findDesignerById(-1)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/set-designer/-1")).andExpect(status().isNotFound());
+
+        verify(gameRepository).findGameById(-1);
+        verify(designerRepository).findDesignerById(-1);
+
+    }
+
+    @Test
+    public void addDesignerToGameRatingShouldReturnIsUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/-1/set-designer/-1")).andExpect(status().isUnauthorized());
     }
 
 

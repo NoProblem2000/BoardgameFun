@@ -699,6 +699,63 @@ public class GameControllerTests {
 
     @Test
     public void addSimilarGameShouldReturnIsUnauthorized() throws Exception {
-        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-similar/1/2")).andExpect(status().isUnauthorized()).andReturn();
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/add-similar/1/2")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteSameGameShouldReturnIsOk() throws Exception {
+        when(sameGameRepository.findSameGame_ByReferenceGameIdAndSourceGameId(1, 2)).thenReturn(sameGame);
+        doNothing().when(sameGameRepository).delete(sameGame);
+        when(gameRepository.getSimilarGames(1)).thenReturn(games);
+        when(gameService.entitiesToGameDTO(games)).thenReturn(gamesDataDTO);
+
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-similar/1/2")).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
+
+        verify(sameGameRepository).findSameGame_ByReferenceGameIdAndSourceGameId(1, 2);
+        verify(sameGameRepository).delete(sameGame);
+        verify(gameRepository).getSimilarGames(1);
+        verify(gameService).entitiesToGameDTO(games);
+
+        Assertions.assertEquals(gamesDataDTO.size(), res.length);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteSameGameShouldReturnIsNotFound_ReferenceGame() throws Exception {
+        when(sameGameRepository.findSameGame_ByReferenceGameIdAndSourceGameId(-1, 2)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-similar/-1/2")).andExpect(status().isNotFound());
+
+        verify(sameGameRepository).findSameGame_ByReferenceGameIdAndSourceGameId(-1, 2);
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteSameGameShouldReturnIsNotFound_SourceGame() throws Exception {
+        when(sameGameRepository.findSameGame_ByReferenceGameIdAndSourceGameId(1, -2)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-similar/1/-2")).andExpect(status().isNotFound());
+
+        verify(sameGameRepository).findSameGame_ByReferenceGameIdAndSourceGameId(1, -2);
+
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteSameGameShouldReturnIsNotFound_BothGame() throws Exception {
+        when(sameGameRepository.findSameGame_ByReferenceGameIdAndSourceGameId(-1, -2)).thenReturn(null);
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-similar/-1/-2")).andExpect(status().isNotFound());
+
+        verify(sameGameRepository).findSameGame_ByReferenceGameIdAndSourceGameId(-1, -2);
+
+    }
+
+    @Test
+    public void deleteSameGameShouldReturnIsUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/delete-similar/1/2")).andExpect(status().isUnauthorized());
     }
 }

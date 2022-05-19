@@ -201,6 +201,9 @@ public class GameController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<List<GameDataDTO>> deleteSameGame(@PathVariable Integer referenceGameId, @PathVariable Integer sourceGameId) {
         var sameGame = sameGameRepository.findSameGame_ByReferenceGameIdAndSourceGameId(referenceGameId, sourceGameId);
+        if (sameGame == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
         sameGameRepository.delete(sameGame);
 
         var sameGames = gameService.entitiesToGameDTO(gameRepository.getSimilarGames(referenceGameId));

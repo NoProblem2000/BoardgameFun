@@ -2,6 +2,7 @@ package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.FilterGamesDTO;
 import com.petproject.boardgamefun.dto.GameDataDTO;
+import com.petproject.boardgamefun.dto.GameSellDTO;
 import com.petproject.boardgamefun.dto.RatingGameByUserDTO;
 import com.petproject.boardgamefun.model.Expansion;
 import com.petproject.boardgamefun.model.Game;
@@ -257,6 +258,36 @@ public class GameController {
 
         return new ResponseEntity<>(gameDTO, HttpStatus.OK);
     }
+
+    @Transactional
+    @GetMapping("/{userId}/games")
+    public ResponseEntity<List<GameDataDTO>> getUserCollection(@PathVariable Integer userId) {
+
+        var games = gameService.entitiesToGameDTO(gameRepository.findUserGames(userId));
+        return new ResponseEntity<>(games, HttpStatus.OK);
+    }
+
+    @GetMapping("/{userId}/games-rating")
+    public ResponseEntity<List<GameDataDTO>> getUserRatingList(@PathVariable Integer userId) {
+
+        var ratingGamesByUser = gameService.userGameRatingToGameDTO(gameRepository.findUserGameRatingList(userId));
+
+        return new ResponseEntity<>(ratingGamesByUser, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/wishlist")
+    public ResponseEntity<List<GameDataDTO>> getUserWishlist(@PathVariable Integer id) {
+        var games = gameService.entitiesToGameDTO(gameRepository.findUserWishlist(id));
+        return new ResponseEntity<>(games, HttpStatus.OK);
+    }
+
+ /*   @GetMapping("{userId}/games-to-sell")
+    public ResponseEntity<List<GameSellDTO>> getGameSellList(@PathVariable Integer userId) {
+
+        var gameSellList = gameSellService.projectionsToGameSellDTO(gameRepository.getGameSellList(userId));
+
+        return new ResponseEntity<>(gameSellList, HttpStatus.OK);
+    }*/
 
 
     // todo: use standard hibernate deleteById and findById!!!

@@ -1,10 +1,12 @@
-package com.petproject.boardgamefun;
+/*
+package com.petproject.boardgamefun.controller;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petproject.boardgamefun.SpringSecurityWebTestConfig;
 import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.FilterGamesDTO;
 import com.petproject.boardgamefun.dto.GameDataDTO;
@@ -935,3 +937,4 @@ public class GameControllerTests {
 
     //todo: union beforeAll method?
 }
+*/

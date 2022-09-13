@@ -21,13 +21,13 @@
     </properties>
     <!--TODO: add Valid annotation on request -->
     <!--TODO: add logging-->
-    <!--TODO: add jpamodelgen-->
     <!--TODO: add actuator-->
     <!--TODO: add cookie with credentials-->
     <!--TODO: add profiles-->
     <!--TODO: add https-->
     <!--TODO: add cache-->
     <!--TODO: add ftp for files-->
+    <!--TODO: add swagger-->
     <!--TODO: add Spring integration???-->
     <!--TODO: add Spring webflux???-->
     <!--TODO: add Eureka for market???-->

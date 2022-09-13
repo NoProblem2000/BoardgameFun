@@ -1,13 +1,18 @@
-package com.petproject.boardgamefun;
+package com.petproject.boardgamefun.controller;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petproject.boardgamefun.SpringSecurityWebTestConfig;
 import com.petproject.boardgamefun.dto.*;
 import com.petproject.boardgamefun.dto.projection.GameSellProjection;
 import com.petproject.boardgamefun.dto.projection.UserGameRatingProjection;
+import com.petproject.boardgamefun.dto.request.PasswordChangeRequest;
+import com.petproject.boardgamefun.dto.request.UserEditRequest;
+import com.petproject.boardgamefun.exception.BadRequestException;
+import com.petproject.boardgamefun.exception.NoRecordFoundException;
 import com.petproject.boardgamefun.model.*;
 
 import com.petproject.boardgamefun.repository.*;
@@ -24,6 +29,7 @@ import com.petproject.boardgamefun.service.UserService;
 import com.petproject.boardgamefun.service.mappers.DiaryMapper;
 import com.petproject.boardgamefun.service.mappers.GameMapper;
 import com.petproject.boardgamefun.service.mappers.UserMapper;
+import org.apache.maven.wagon.resource.Resource;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -36,7 +42,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -44,15 +52,394 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 
 
 @ExtendWith(MockitoExtension.class)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.MOCK,
+        classes = SpringSecurityWebTestConfig.class
+)
+@AutoConfigureMockMvc
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class UserControllerTests {
+
+    private final String Gateway = "/users";
+
+    @Autowired
+    UserMapper userMapper;
+    @Autowired
+    private MockMvc mockMvc;
+    @MockBean
+    private UserService userService;
+    @MockBean
+    private RefreshTokenService refreshTokenService;
+
+    @MockBean
+    private AuthenticationManager authenticationManager;
+
+    @MockBean
+    private Authentication authentication;
+
+    @MockBean
+    private JwtUtils jwtUtils;
+
+    @MockBean
+    private UserDetailsImpl userDetails;
+    @Captor
+    ArgumentCaptor<List<UserDTO>> userListArgumentCaptor;
+    @Captor
+    ArgumentCaptor<String> stringArgumentCaptor;
+    @Captor
+    ArgumentCaptor<User> userArgumentCaptor;
+
+    private List<UserDTO> usersDTO;
+    private UserDTO userDTO;
+    private UserDTO userModeratorDTO;
+    private User userAdmin;
+    private User userModerator;
+    private User user;
+    private List<User> users;
+    private UserEditRequest userEditRequest;
+    private PasswordChangeRequest passwordChangeRequest;
+    ObjectMapper objectMapper;
+
+    @BeforeAll
+    public void setup() {
+        objectMapper = new ObjectMapper();
+        objectMapper.findAndRegisterModules();
+        userAdmin = new User();
+        userAdmin.setId(11);
+        userAdmin.setName("Alice");
+        userAdmin.setPassword("pswd");
+        userAdmin.setRole("ADMIN");
+        userAdmin.setMail("alicealisson@ggogle.com");
+        userAdmin.setRating(1.0);
+        userAdmin.setRegistrationDate(OffsetDateTime.now());
+
+        userModerator = new User();
+        userModerator.setId(14);
+        userModerator.setName("Sam");
+        userModerator.setPassword("pswdsam");
+        userModerator.setRole("MODERATOR");
+        userModerator.setMail("samwinchester@ggogle.com");
+        userModerator.setRating(1.0);
+        userModerator.setRegistrationDate(OffsetDateTime.now());
+
+        user = new User();
+        user.setId(34);
+        user.setName("Bobby");
+        user.setPassword("1234qwer");
+        user.setRole("USER");
+        user.setMail("bobby@ggogle.com");
+        user.setRating(1.0);
+        user.setRegistrationDate(OffsetDateTime.now());
+
+        users = new ArrayList<>();
+        users.add(userAdmin);
+        users.add(userModerator);
+        users.add(user);
+
+
+        userDTO = userMapper.userToUserDTO(user);
+        usersDTO = new ArrayList<>();
+        usersDTO.add(userMapper.userToUserDTO(userAdmin));
+        usersDTO.add(userMapper.userToUserDTO(userModerator));
+        usersDTO.add(userMapper.userToUserDTO(user));
+
+        userModeratorDTO = userMapper.userToUserDTO(userModerator);
+
+        userEditRequest = new UserEditRequest();
+        userEditRequest.setRole(userModerator.getRole());
+        userEditRequest.setName(userModerator.getName());
+
+        passwordChangeRequest = new PasswordChangeRequest();
+        passwordChangeRequest.setPassword("bla-bla");
+
+
+    }
+
+    @Test
+    public void getUsersShouldReturnOk() throws Exception {
+        when(userService.getUsers()).thenReturn(usersDTO);
+
+        var result = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway)).andDo(print()).andExpect(status().isOk()).andReturn();
+
+        var userList = objectMapper.readValue(result.getResponse().getContentAsByteArray(), UserDTO[].class);
+
+        verify(userService).getUsers();
+        Assertions.assertEquals(userList.length, 3);
+    }
+
+    @Test
+    public void getUsersShouldReturnOk_BlankList() throws Exception {
+        when(userService.getUsers()).thenReturn(new ArrayList<>());
+
+        var mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway)).andDo(print()).andExpect(status().isOk()).andReturn();
+        UserDTO[] userResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), UserDTO[].class);
+        verify(userService).getUsers();
+        Assertions.assertEquals(userResponse.length, 0);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void authenticateUserShouldReturnOk() throws Exception {
+        LoginRequest loginRequest = new LoginRequest(user.getName(), user.getPassword());
+
+        when(authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getName(), user.getPassword()))).thenReturn(authentication);
+        when(userService.existsByName((user.getName()))).thenReturn(true);
+        when(refreshTokenService.createRefreshToken(user.getName())).thenReturn("token");
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        when(jwtUtils.generateJwtToken(authentication)).thenReturn("124");
+        when(userDetails.getId()).thenReturn(user.getId());
+        when(userDetails.getUsername()).thenReturn(user.getName());
+        when(userDetails.getEmail()).thenReturn(user.getMail());
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-in").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isOk());
+
+        verify(refreshTokenService).createRefreshToken(stringArgumentCaptor.capture());
+        Assertions.assertEquals(stringArgumentCaptor.getValue(), user.getName());
+    }
+
+    @Test
+    public void authenticateUserShouldReturn415() throws Exception {
+        LoginRequest loginRequest = new LoginRequest("Admin", "123qweAdmin");
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-in")
+                .contentType(MediaType.APPLICATION_XML)
+                .accept(MediaType.APPLICATION_XML)
+                .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isUnsupportedMediaType());
+    }
+
+    @Test
+    public void authenticateUserShouldReturnNotFound() throws Exception {
+        LoginRequest loginRequest = new LoginRequest("-1Admin", "123qweAdmin");
+        when(userService.existsByName(user.getName())).thenReturn(false);
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-in")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void authenticateUserShouldReturnNotAuthorized() throws Exception {
+        LoginRequest loginRequest = new LoginRequest(user.getName(), user.getPassword());
+
+        when(userService.existsByName(user.getName())).thenReturn(true);
+        when(authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getName(), user.getPassword()))).thenThrow(new AuthenticationException("auth failed") {
+            @Override
+            public String getMessage() {
+                return super.getMessage();
+            }
+        });
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-in")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void authenticateUserShouldReturnBadRequest() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-in")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void refreshTokenShouldReturnNotAuthorizedBadAccessToken() throws Exception {
+        RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest("Admin", "bla-bla");
+        when(refreshTokenService.verifyExpiration(refreshTokenRequest.getRefreshToken())).thenReturn(false);
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/refresh-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(refreshTokenRequest)))
+                .andExpect(status().isUnauthorized());
+        verify(refreshTokenService, only()).verifyExpiration(refreshTokenRequest.getRefreshToken());
+    }
+
+    @Test
+    public void refreshTokenShouldReturnIsOk() throws Exception {
+        RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest("Admin", "bla-bla");
+
+        when(refreshTokenService.verifyExpiration(refreshTokenRequest.getRefreshToken())).thenReturn(true);
+        when(jwtUtils.generateJwtToken(refreshTokenRequest.getUserName())).thenReturn("new token");
+
+        var response = this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/refresh-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(refreshTokenRequest)))
+                .andExpect(status().isOk()).andReturn();
+
+        RefreshTokenResponse refreshTokenResponse = objectMapper.readValue(response.getResponse().getContentAsByteArray(), RefreshTokenResponse.class);
+
+        verify(refreshTokenService, only()).verifyExpiration(refreshTokenRequest.getRefreshToken());
+        verify(jwtUtils, only()).generateJwtToken(refreshTokenRequest.getUserName());
+        Assertions.assertEquals(refreshTokenResponse.getAccessToken(), "new token");
+    }
+
+    @Test
+    public void getUserShouldReturnStatusOkTest() throws Exception {
+        when(userService.getUser(1)).thenReturn(userDTO);
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1")).andDo(print()).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), UserDTO.class);
+        verify(userService).getUser(1);
+        Assertions.assertEquals(res.name(), userDTO.name());
+    }
+
+    @Test
+    public void getUserShouldReturnStatusNotFound() throws Exception {
+        when(userService.getUser(-1)).thenThrow(new NoRecordFoundException("User not found"));
+        this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1")).andDo(print()).andExpect(status().isNotFound());
+        verify(userService).getUser(-1);
+    }
+
+    @Test
+    public void getUserWhenBadPathValueReturn400() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/{userId}", "userId")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void registerUserShouldReturnOK() throws Exception {
+        doNothing().when(userService).registerUser(any(User.class));
+        mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-up").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(user))).andExpect(status().isOk());
+        verify(userService).registerUser(any(User.class));
+    }
+
+    @Test
+    public void registerUserShouldReturnBadRequest() throws Exception {
+        doThrow(new BadRequestException()).when(userService).registerUser(user);
+        mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-up").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(user))).andExpect(status().isOk());
+    }
+
+    @Test
+    public void uploadAvatarShouldReturnOk() throws Exception {
+        MockMultipartFile multipartFile = new MockMultipartFile(
+                "avatar",
+                "hello.jpg",
+                MediaType.MULTIPART_FORM_DATA_VALUE,
+                "0x36".getBytes()
+        );
+        doNothing().when(userService).uploadAvatar(user.getName(), multipartFile);
+        MockMultipartHttpServletRequestBuilder multipartRequest =
+                MockMvcRequestBuilders.multipart(Gateway + "/upload-avatar/" + user.getName());
+        mockMvc.perform(multipartRequest.file(multipartFile))
+                .andExpect(status().isOk());
+
+        verify(userService).uploadAvatar(user.getName(), multipartFile);
+    }
+
+    @Test
+    public void uploadAvatarShouldReturnNotFound() throws Exception {
+        MockMultipartFile multipartFile = new MockMultipartFile(
+                "avatar",
+                "hello.jpg",
+                MediaType.MULTIPART_FORM_DATA_VALUE,
+                "0x36".getBytes()
+        );
+        doThrow(new NoRecordFoundException()).when(userService).uploadAvatar("user.getName()", multipartFile);
+
+        MockMultipartHttpServletRequestBuilder multipartRequest =
+                MockMvcRequestBuilders.multipart(Gateway + "/upload-avatar/" + "user.getName()");
+        mockMvc.perform(multipartRequest.file(multipartFile))
+                .andExpect(status().isNotFound());
+
+        verify(userService).uploadAvatar("user.getName()", multipartFile);
+    }
+
+    @Test
+    public void uploadAvatarShouldReturnBadRequest() throws Exception {
+        MockMultipartFile multipartFile = new MockMultipartFile(
+                "avatar",
+                "hello.jpg",
+                MediaType.TEXT_PLAIN_VALUE,
+                "0x36".getBytes()
+        );
+        doThrow(new BadRequestException()).when(userService).uploadAvatar(user.getName(), multipartFile);
+        MockMultipartHttpServletRequestBuilder multipartRequest =
+                MockMvcRequestBuilders.multipart(Gateway + "/upload-avatar/" + user.getName());
+        mockMvc.perform(multipartRequest.file(multipartFile))
+                .andExpect(status().isBadRequest());
+
+        verify(userService).uploadAvatar(user.getName(), multipartFile);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void editUserShouldReturnOK() throws Exception {
+        when(userService.editUser(1, userEditRequest)).thenReturn(userModeratorDTO);
+        var mvcRes = mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/1").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userEditRequest))).andExpect(status().isOk()).andReturn();
+        var result = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), UserDTO.class);
+        verify(userService).editUser(1, userEditRequest);
+        Assertions.assertEquals(result.name(), userModeratorDTO.name());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void editUserShouldReturnBadReqQuest() throws Exception {
+        when(userService.editUser(1, userEditRequest)).thenThrow(new BadRequestException("Nickname already exists"));
+        mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/1").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userEditRequest))).andExpect(status().isBadRequest());
+        verify(userService).editUser(1, userEditRequest);
+    }
+
+    @Test
+    public void editUserShouldReturnUnauthorized() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/1").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userEditRequest))).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void changePasswordShouldReturnUnauthorized() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/change-password/1").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(passwordChangeRequest))).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void changePasswordShouldReturnBadRequest() throws Exception {
+        when(userService.changePassword(1, passwordChangeRequest)).thenThrow(new BadRequestException());
+        mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/change-password/1").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(passwordChangeRequest))).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void changePasswordShouldReturnOk() throws Exception {
+        when(userService.changePassword(1, passwordChangeRequest)).thenReturn(userDTO);
+        var mvcRes =mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/change-password/1").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(passwordChangeRequest))).andExpect(status().isOk()).andReturn();
+        var result = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), UserDTO.class);
+        verify(userService).changePassword(1, passwordChangeRequest);
+        Assertions.assertEquals(userDTO.name(), result.name());
+    }
+}
+
+
+/*@ExtendWith(MockitoExtension.class)
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         classes = SpringSecurityWebTestConfig.class
@@ -1544,4 +1931,4 @@ public class UserControllerTests {
         diary.setId(null);
     }
 
-}
+}*/

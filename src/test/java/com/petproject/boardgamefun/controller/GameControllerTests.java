@@ -1,4 +1,4 @@
-/*
+
 package com.petproject.boardgamefun.controller;
 
 import static org.mockito.Mockito.when;
@@ -7,20 +7,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.SpringSecurityWebTestConfig;
-import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.FilterGamesDTO;
 import com.petproject.boardgamefun.dto.GameDataDTO;
-import com.petproject.boardgamefun.dto.RatingGameByUserDTO;
-import com.petproject.boardgamefun.dto.projection.DesignersProjection;
 import com.petproject.boardgamefun.dto.projection.GameProjection;
 import com.petproject.boardgamefun.dto.projection.GamesFilterByTitleProjection;
-import com.petproject.boardgamefun.dto.projection.UsersGameRatingProjection;
+import com.petproject.boardgamefun.exception.BadRequestException;
+import com.petproject.boardgamefun.exception.NoRecordFoundException;
 import com.petproject.boardgamefun.model.*;
-import com.petproject.boardgamefun.repository.*;
 import com.petproject.boardgamefun.service.GameService;
 import com.petproject.boardgamefun.service.mappers.GameMapper;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -41,7 +39,392 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+//todo: Assertions.assertDoesNotThrow(() -> gameService.save(game););
+@ExtendWith(MockitoExtension.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, classes = SpringSecurityWebTestConfig.class)
+@AutoConfigureMockMvc
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class GameControllerTests {
+    @Autowired
+    private MockMvc mockMvc;
 
+    @Autowired
+    private WebApplicationContext webApplicationContext;
+
+    private final String Gateway = "/games";
+
+    ObjectMapper objectMapper;
+
+    @Autowired
+    GameMapper gameMapper;
+
+    @MockBean
+    private GameService gameService;
+
+    private Game game;
+    private Game game2;
+    private List<Game> games;
+    private GameProjection gameProjection;
+    private List<GameProjection> gameProjectionList;
+    private GameDataDTO gameDataDTO;
+    private List<GameDataDTO> gamesDataDTO;
+    private List<GamesFilterByTitleProjection> gamesFilterByTitleProjectionList;
+    private List<FilterGamesDTO> filterGamesDTOList;
+    private MockMultipartFile multipartFile;
+
+    @BeforeAll
+    public void setup() {
+        objectMapper = new ObjectMapper();
+        objectMapper.findAndRegisterModules();
+
+        String instantExpected = "2014-12-22T10:15:30Z";
+
+        game = new Game();
+        game.setId(1);
+        game.setTitle(" Игра номер 1");
+        game.setDescription("Отличная игра войнушка номер 1");
+        game.setAnnotation("Отличная игра номер 1");
+        game.setPicture(null);
+        game.setPlayerAge("14");
+        game.setPlayersMin(3);
+        game.setPlayersMax(5);
+        game.setTimeToPlayMin(120);
+        game.setTimeToPlayMax(360);
+        game.setYearOfRelease(OffsetDateTime.parse(instantExpected));
+
+
+        game2 = new Game();
+        game2.setId(1);
+        game2.setTitle(" Игра номер 2");
+        game2.setDescription("Отличная игра войнушка номер 2");
+        game2.setAnnotation("Отличная игра номер 2");
+        game2.setPicture(null);
+        game2.setPlayerAge("16");
+        game2.setPlayersMin(2);
+        game2.setPlayersMax(4);
+        game2.setTimeToPlayMin(30);
+        game2.setTimeToPlayMax(120);
+        game2.setYearOfRelease(OffsetDateTime.parse(instantExpected));
+
+        games = new ArrayList<>();
+        games.add(game);
+        games.add(game2);
+
+        gameProjection = new GamePOJO(game, 8.0);
+        gameProjectionList = new ArrayList<>();
+        gameProjectionList.add(gameProjection);
+
+        Designer designer = new Designer();
+        designer.setId(1);
+        designer.setName("Designer number one");
+
+        Designer designer2 = new Designer();
+        designer2.setId(2);
+        designer2.setName("Designer number two");
+
+        List<String> designers = new ArrayList<>();
+        designers.add(designer.getName());
+        designers.add(designer2.getName());
+
+        gameDataDTO = new GameDataDTO(gameMapper.gameToGameDTO(game), 8.4, designers);
+        designers.remove(1);
+        GameDataDTO gameDataDTO1 = new GameDataDTO(gameMapper.gameToGameDTO(game), 7.9, designers);
+
+        gamesDataDTO = new ArrayList<>();
+        gamesDataDTO.add(gameDataDTO);
+        gamesDataDTO.add(gameDataDTO1);
+
+        gamesFilterByTitleProjectionList = new ArrayList<>();
+        gamesFilterByTitleProjectionList.add(new GameTitlePOJO("some title", 2));
+        gamesFilterByTitleProjectionList.add(new GameTitlePOJO("some title 2", 3));
+
+        filterGamesDTOList = new ArrayList<>();
+        filterGamesDTOList.add(new FilterGamesDTO(2, "some title"));
+        filterGamesDTOList.add(new FilterGamesDTO(3, "some title 2"));
+
+        multipartFile = new MockMultipartFile(
+                "picture",
+                "hello.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "0x36".getBytes()
+        );
+    }
+
+    @Test
+    public void getGamesShouldReturnOk() throws Exception {
+
+        when(gameService.getGames()).thenReturn(gamesDataDTO);
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway)).andDo(print()).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
+        verify(gameService).getGames();
+        Assertions.assertEquals(res.length, 2);
+
+    }
+
+    @Test
+    public void getGamesShouldReturnOk_BlankList() throws Exception {
+
+        when(gameService.getGames()).thenReturn(new ArrayList<>());
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway)).andDo(print()).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
+        verify(gameService).getGames();
+        Assertions.assertEquals(res.length, 0);
+    }
+
+    @Test
+    public void getGameByIdShouldReturnOk() throws Exception {
+
+        when(gameService.getGameById(1)).thenReturn(gameDataDTO);
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1")).andDo(print()).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO.class);
+        verify(gameService).getGameById(1);
+        Assertions.assertEquals(res.getGame().id(), gameDataDTO.getGame().id());
+    }
+
+    @Test
+    public void getGameByIdShouldReturnNotFound() throws Exception {
+        when(gameService.getGameById(-1)).thenThrow(new NoRecordFoundException());
+        this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1")).andDo(print()).andExpect(status().isNotFound());
+        verify(gameService).getGameById(-1);
+    }
+
+    @Test
+    public void getGamesByTitleShouldReturnOk() throws Exception {
+
+        when(gameService.getGameByTitle("so")).thenReturn(filterGamesDTOList);
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/get-games-by-filter/so")).andDo(print()).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), FilterGamesDTO[].class);
+        verify(gameService).getGameByTitle("so");
+        Assertions.assertEquals(gamesFilterByTitleProjectionList.size(), res.length);
+    }
+
+    @Test
+    public void getGamesByTitleShouldReturnOk_BlankArray() throws Exception {
+        when(gameService.getGameByTitle("title not exist")).thenReturn(new ArrayList<>());
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/get-games-by-filter/title not exist")).andDo(print()).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), FilterGamesDTO[].class);
+        verify(gameService).getGameByTitle("title not exist");
+        Assertions.assertEquals(0, res.length);
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void addGameShouldReturnOk() throws Exception {
+        game.setId(null);
+        doNothing().when(gameService).checkExistence(game);
+        when(gameService.save(game)).thenReturn(gameDataDTO);
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isOk());
+        verify(gameService).checkExistence(refEq(game));
+        verify(gameService).save(refEq(game));
+        game.setId(1);
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void addGameShouldReturnBadRequest() throws Exception {
+        doThrow(new BadRequestException()).when(gameService).checkExistence(any(Game.class));
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isBadRequest());
+        verify(gameService).checkExistence(any(Game.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void addGameShouldReturnBadRequest_BadModel() throws Exception {
+        doNothing().when(gameService).checkExistence(any(Game.class));
+        when(gameService.save(any(Game.class))).thenThrow(new BadRequestException("Bad model"));
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isBadRequest());
+        verify(gameService).checkExistence(any(Game.class));
+        verify(gameService).save(any(Game.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void addGameShouldReturnForbidden() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void addGameShouldReturnUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void uploadImageShouldReturnIsOk() throws Exception {
+        when(gameService.uploadImage(1, multipartFile)).thenReturn(gameDataDTO);
+        MockMultipartHttpServletRequestBuilder multipartRequest =
+                MockMvcRequestBuilders.multipart(Gateway + "/upload-image/1");
+        mockMvc.perform(multipartRequest.file(multipartFile))
+                .andExpect(status().isOk());
+        verify(gameService).uploadImage(1, multipartFile);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void uploadImageShouldReturnNotFound() throws Exception {
+        when(gameService.uploadImage(-1, multipartFile)).thenThrow(new NoRecordFoundException("Game does not exist with id "));
+
+        MockMultipartHttpServletRequestBuilder multipartRequest =
+                MockMvcRequestBuilders.multipart(Gateway + "/upload-image/-1");
+        mockMvc.perform(multipartRequest.file(multipartFile))
+                .andExpect(status().isNotFound());
+
+        verify(gameService).uploadImage(-1, multipartFile);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void uploadImageShouldReturnBadRequest() throws Exception {
+        MockMultipartFile multipartFile1 = new MockMultipartFile(
+                "picture",
+                "hello.txt",
+                MediaType.TEXT_PLAIN_VALUE,
+                "0x36".getBytes()
+        );
+        when(gameService.uploadImage(1, multipartFile1)).thenThrow(new BadRequestException("File has uncorrected format"));
+
+        MockMultipartHttpServletRequestBuilder multipartRequest =
+                MockMvcRequestBuilders.multipart(Gateway + "/upload-image/1");
+        mockMvc.perform(multipartRequest.file(multipartFile1))
+                .andExpect(status().isBadRequest());
+
+        verify(gameService).uploadImage(1, multipartFile1);
+    }
+
+    @Test
+    public void uploadImageShouldReturnUnauthorized() throws Exception {
+        MockMultipartHttpServletRequestBuilder multipartRequest =
+                MockMvcRequestBuilders.multipart(Gateway + "/upload-image/-1");
+        mockMvc.perform(multipartRequest.file(multipartFile))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void updateGameShouldReturnOk() throws Exception {
+        when(gameService.save(game)).thenReturn(gameDataDTO);
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isOk());
+        verify(gameService).save(refEq(game));
+
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void updateGameShouldReturnBadRequest() throws Exception {
+        game.setId(null);
+        when(gameService.save(any(Game.class))).thenThrow(new BadRequestException("Game with id " + game.getId() + " doesn't exist"));
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isBadRequest());
+        verify(gameService).save(any(Game.class));
+        game.setId(1);
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void updateGameShouldReturnBadRequest_BadModel() throws Exception {
+        when(gameService.save(any(Game.class))).thenThrow(new BadRequestException("Bad model"));
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isBadRequest());
+        verify(gameService).save(any(Game.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void updateGameShouldReturnForbidden() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void updateGameShouldReturnUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void removeGameFromSiteShouldReturnIsOk() throws Exception {
+        doNothing().when(gameService).delete(any(Game.class));
+
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isOk());
+
+        verify(gameService).delete(any(Game.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "MODERATOR")
+    public void removeGameFromSiteShouldReturnNotFound() throws Exception {
+        doThrow(new NoRecordFoundException("Game with id does not exist")).when(gameService).delete(any(Game.class));
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isNotFound());
+        verify(gameService).delete(any(Game.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void removeGameFromSiteShouldReturnForbidden() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void removeGameFromSiteShouldReturnIsUnauthorized() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(game))).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void getUserCollectionShouldReturnOk() throws Exception {
+        when(gameService.getUserCollection(1)).thenReturn(gamesDataDTO);
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1/games")).andDo(print()).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
+        verify(gameService).getUserCollection(1);
+        Assertions.assertEquals(res.length, gamesDataDTO.size());
+
+    }
+
+    @Test
+    public void getUserCollectionShouldReturnNotFound() throws Exception {
+        when(gameService.getUserCollection(-1)).thenThrow(new NoRecordFoundException("User with this id not found"));
+        this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1/games")).andDo(print()).andExpect(status().isNotFound());
+        verify(gameService).getUserCollection(-1);
+    }
+
+    @Test
+    public void getUserCollectionShouldReturnOk_BlankList() throws Exception {
+        when(gameService.getUserCollection(1)).thenReturn(new ArrayList<>());
+        var mvcRes = this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/1/games")).andDo(print()).andExpect(status().isOk()).andReturn();
+        var res = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), GameDataDTO[].class);
+        verify(gameService).getUserCollection(1);
+        Assertions.assertEquals(res.length, 0);
+    }
+
+}
+
+
+/*
 @ExtendWith(MockitoExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, classes = SpringSecurityWebTestConfig.class)
 @AutoConfigureMockMvc

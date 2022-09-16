@@ -39,4 +39,11 @@ public class GameSellController {
         gameSellService.updateGameSell(gameSell);
         return new ResponseEntity<>(gameSell.getGame().getTitle() + " обновлена", HttpStatus.OK);
     }
+
+    @GetMapping("{userId}")
+    public ResponseEntity<List<GameSellDTO>> getGameSellList(@PathVariable Integer userId) {
+
+        var gameSellList = gameSellService.getGameSellList(userId);
+        return new ResponseEntity<>(gameSellList, HttpStatus.OK);
+    }
 }

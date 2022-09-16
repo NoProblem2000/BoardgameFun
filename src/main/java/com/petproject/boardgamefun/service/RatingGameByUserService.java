@@ -1,5 +1,7 @@
 package com.petproject.boardgamefun.service;
 
+import com.petproject.boardgamefun.dto.GameDataDTO;
+import com.petproject.boardgamefun.dto.RatingGameByUserDTO;
 import com.petproject.boardgamefun.exception.BadRequestException;
 import com.petproject.boardgamefun.exception.NoRecordFoundException;
 import com.petproject.boardgamefun.model.RatingGameByUser;
@@ -9,6 +11,7 @@ import com.petproject.boardgamefun.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.util.List;
 
 @Service
 public class RatingGameByUserService {
@@ -16,11 +19,13 @@ public class RatingGameByUserService {
     final RatingGameByUserRepository ratingGameByUserRepository;
     final GameRepository gameRepository;
     final UserRepository userRepository;
+    final GameService gameService;
 
-    public RatingGameByUserService(RatingGameByUserRepository ratingGameByUserRepository, GameRepository gameRepository, UserRepository userRepository) {
+    public RatingGameByUserService(RatingGameByUserRepository ratingGameByUserRepository, GameRepository gameRepository, UserRepository userRepository, GameService gameService) {
         this.ratingGameByUserRepository = ratingGameByUserRepository;
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
+        this.gameService = gameService;
     }
 
     @Transactional
@@ -71,6 +76,15 @@ public class RatingGameByUserService {
         ratingGameByUser.setRating(rating.doubleValue());
         ratingGameByUserRepository.save(ratingGameByUser);
         return rating.doubleValue();
+    }
+
+    @Transactional
+    public List<RatingGameByUserDTO> getUsersRating(Integer gameId){
+        return gameService.usersGameRatingToDTO(userRepository.findGameRatings(gameId));
+    }
+
+    public List<GameDataDTO> getUserRatingList(Integer userId){
+        return gameService.userGameRatingToGameDTO(gameRepository.findUserGameRatingList(userId));
     }
 
 }

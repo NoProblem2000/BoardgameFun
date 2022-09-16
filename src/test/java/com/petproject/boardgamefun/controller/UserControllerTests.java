@@ -326,6 +326,7 @@ public class UserControllerTests {
         mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/sign-up").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(user))).andExpect(status().isOk());
+        verify(userService).registerUser(any(User.class));
     }
 
     @Test

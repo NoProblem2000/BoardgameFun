@@ -1,10 +1,14 @@
 package com.petproject.boardgamefun.controller;
 
+import com.petproject.boardgamefun.dto.GameDataDTO;
+import com.petproject.boardgamefun.dto.RatingGameByUserDTO;
 import com.petproject.boardgamefun.service.RatingGameByUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/rating-game-by-user")
@@ -34,6 +38,20 @@ public class RatingGameByUserController {
     public ResponseEntity<Double> updateGameRating(@PathVariable Integer userId, @PathVariable Integer gameId, @PathVariable Integer rating) {
         Double res = ratingGameByUserService.updateGameRating(userId, gameId, rating);
         return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+    @GetMapping("/{gameId}/users-rating")
+    public ResponseEntity<List<RatingGameByUserDTO>> getUsersRating(@PathVariable Integer gameId) {
+
+        var ratings = ratingGameByUserService.getUsersRating(gameId);
+        return new ResponseEntity<>(ratings, HttpStatus.OK);
+    }
+
+    @GetMapping("/{userId}/games-rating")
+    public ResponseEntity<List<GameDataDTO>> getUserRatingList(@PathVariable Integer userId) {
+
+        var ratingGamesByUser = ratingGameByUserService.getUserRatingList(userId);
+        return new ResponseEntity<>(ratingGamesByUser, HttpStatus.OK);
     }
 
 }

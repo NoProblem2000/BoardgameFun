@@ -10,8 +10,6 @@ import com.petproject.boardgamefun.repository.GameRepository;
 import com.petproject.boardgamefun.repository.GameSellRepository;
 import com.petproject.boardgamefun.repository.UserRepository;
 import com.petproject.boardgamefun.service.mappers.GameMapper;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -79,6 +77,11 @@ public class GameSellService {
         }
 
         gameSellRepository.save(gameSell);
+    }
+
+    @Transactional
+    public List<GameSellDTO> getGameSellList(Integer userId) {
+        return projectionsToGameSellDTO(gameRepository.getGameSellList(userId));
     }
 
     public GameSellDTO entityToGameSellDTO(Game game) {

@@ -186,7 +186,7 @@ public class GameControllerTests {
     public void getGameByIdShouldReturnNotFound() throws Exception {
         when(gameService.getGameById(-1)).thenThrow(new NoRecordFoundException());
         this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1")).andDo(print()).andExpect(status().isNotFound());
-        verify(gameService).getGameById(-1);
+        Assertions.assertThrows(NoRecordFoundException.class, () -> gameService.getGameById(-1));
     }
 
     @Test
@@ -229,7 +229,7 @@ public class GameControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.post(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(game))).andExpect(status().isBadRequest());
-        verify(gameService).checkExistence(any(Game.class));
+        Assertions.assertThrows(BadRequestException.class, () -> gameService.checkExistence(game));
     }
 
     @Test
@@ -241,7 +241,7 @@ public class GameControllerTests {
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(game))).andExpect(status().isBadRequest());
         verify(gameService).checkExistence(any(Game.class));
-        verify(gameService).save(any(Game.class));
+        Assertions.assertThrows(BadRequestException.class, () -> gameService.save(game));
     }
 
     @Test
@@ -279,8 +279,7 @@ public class GameControllerTests {
                 MockMvcRequestBuilders.multipart(Gateway + "/upload-image/-1");
         mockMvc.perform(multipartRequest.file(multipartFile))
                 .andExpect(status().isNotFound());
-
-        verify(gameService).uploadImage(-1, multipartFile);
+        Assertions.assertThrows(NoRecordFoundException.class, () -> gameService.uploadImage(-1, multipartFile));
     }
 
     @Test
@@ -299,7 +298,7 @@ public class GameControllerTests {
         mockMvc.perform(multipartRequest.file(multipartFile1))
                 .andExpect(status().isBadRequest());
 
-        verify(gameService).uploadImage(1, multipartFile1);
+        Assertions.assertThrows(BadRequestException.class, () -> gameService.uploadImage(1, multipartFile1));
     }
 
     @Test
@@ -329,7 +328,7 @@ public class GameControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(game))).andExpect(status().isBadRequest());
-        verify(gameService).save(any(Game.class));
+        Assertions.assertThrows(BadRequestException.class, () -> gameService.save(game));
         game.setId(1);
     }
 
@@ -340,7 +339,7 @@ public class GameControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.put(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(game))).andExpect(status().isBadRequest());
-        verify(gameService).save(any(Game.class));
+        Assertions.assertThrows(BadRequestException.class, () -> gameService.save(game));
     }
 
     @Test
@@ -377,7 +376,7 @@ public class GameControllerTests {
         this.mockMvc.perform(MockMvcRequestBuilders.delete(Gateway + "/").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(game))).andExpect(status().isNotFound());
-        verify(gameService).delete(any(Game.class));
+        Assertions.assertThrows(NoRecordFoundException.class, () -> gameService.delete(game));
     }
 
     @Test
@@ -409,7 +408,7 @@ public class GameControllerTests {
     public void getUserCollectionShouldReturnNotFound() throws Exception {
         when(gameService.getUserCollection(-1)).thenThrow(new NoRecordFoundException("User with this id not found"));
         this.mockMvc.perform(MockMvcRequestBuilders.get(Gateway + "/-1/games")).andDo(print()).andExpect(status().isNotFound());
-        verify(gameService).getUserCollection(-1);
+        Assertions.assertThrows(NoRecordFoundException.class, () ->gameService.getUserCollection(-1));
     }
 
     @Test

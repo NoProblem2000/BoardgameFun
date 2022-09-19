@@ -248,6 +248,8 @@ public class UserControllerTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest))).andExpect(status().isUnauthorized());
+        verify(userService).existsByName(user.getName());
+        Assertions.assertThrows(AuthenticationException.class, () -> authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getName(), user.getPassword())));
     }
 
     @Test
@@ -360,8 +362,7 @@ public class UserControllerTests {
                 MockMvcRequestBuilders.multipart(Gateway + "/upload-avatar/" + "user.getName()");
         mockMvc.perform(multipartRequest.file(multipartFile))
                 .andExpect(status().isNotFound());
-
-        verify(userService).uploadAvatar("user.getName()", multipartFile);
+        Assertions.assertThrows(NoRecordFoundException.class, () -> userService.uploadAvatar("user.getName()", multipartFile));
     }
 
     @Test
@@ -378,7 +379,7 @@ public class UserControllerTests {
         mockMvc.perform(multipartRequest.file(multipartFile))
                 .andExpect(status().isBadRequest());
 
-        verify(userService).uploadAvatar(user.getName(), multipartFile);
+        Assertions.assertThrows(BadRequestException.class, () -> userService.uploadAvatar(user.getName(), multipartFile));
     }
 
     @Test
@@ -400,7 +401,7 @@ public class UserControllerTests {
         mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/1").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(userEditRequest))).andExpect(status().isBadRequest());
-        verify(userService).editUser(1, userEditRequest);
+        Assertions.assertThrows(BadRequestException.class, () -> userService.editUser(1, userEditRequest));
     }
 
     @Test
@@ -424,13 +425,14 @@ public class UserControllerTests {
         mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/change-password/1").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(passwordChangeRequest))).andExpect(status().isBadRequest());
+        Assertions.assertThrows(BadRequestException.class, () -> userService.changePassword(1, passwordChangeRequest));
     }
 
     @Test
     @WithMockUser(roles = "USER")
     public void changePasswordShouldReturnOk() throws Exception {
         when(userService.changePassword(1, passwordChangeRequest)).thenReturn(userDTO);
-        var mvcRes =mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/change-password/1").contentType(MediaType.APPLICATION_JSON)
+        var mvcRes = mockMvc.perform(MockMvcRequestBuilders.patch(Gateway + "/change-password/1").contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(passwordChangeRequest))).andExpect(status().isOk()).andReturn();
         var result = objectMapper.readValue(mvcRes.getResponse().getContentAsByteArray(), UserDTO.class);

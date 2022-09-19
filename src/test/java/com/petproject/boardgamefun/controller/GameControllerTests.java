@@ -39,7 +39,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-//todo: Assertions.assertDoesNotThrow(() -> gameService.save(game););
 @ExtendWith(MockitoExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, classes = SpringSecurityWebTestConfig.class)
 @AutoConfigureMockMvc

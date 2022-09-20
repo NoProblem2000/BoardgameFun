@@ -2,7 +2,6 @@ package com.petproject.boardgamefun.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petproject.boardgamefun.SpringSecurityWebTestConfig;
-import com.petproject.boardgamefun.dto.GameDataDTO;
 import com.petproject.boardgamefun.dto.GameSellDTO;
 import com.petproject.boardgamefun.exception.BadRequestException;
 import com.petproject.boardgamefun.exception.NoRecordFoundException;
@@ -10,11 +9,9 @@ import com.petproject.boardgamefun.model.Game;
 import com.petproject.boardgamefun.model.GameSell;
 import com.petproject.boardgamefun.model.User;
 import com.petproject.boardgamefun.service.GameSellService;
-import com.petproject.boardgamefun.service.mappers.GameMapper;
 import com.petproject.boardgamefun.service.mappers.GameSellMapper;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Matchers;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -29,7 +26,6 @@ import org.springframework.web.context.WebApplicationContext;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;

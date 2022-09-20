@@ -5,6 +5,7 @@ import com.petproject.boardgamefun.dto.DiaryDataDTO;
 import com.petproject.boardgamefun.dto.DiaryRatingDTO;
 import com.petproject.boardgamefun.dto.request.DiaryCommentRequest;
 import com.petproject.boardgamefun.dto.request.DiaryRatingRequest;
+import com.petproject.boardgamefun.model.Diary;
 import com.petproject.boardgamefun.model.DiaryComment;
 import com.petproject.boardgamefun.model.DiaryRating;
 import com.petproject.boardgamefun.repository.DiaryCommentRepository;
@@ -167,6 +168,75 @@ public class DiaryController {
         diaryRatingRepository.delete(diaryRating);
         return new ResponseEntity<>("Рейтинг убран с игры", HttpStatus.OK);
     }
+
+ /*   @Transactional
+    @PostMapping("{userId}/add-diary/{gameId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<DiaryDataDTO> addDiary(@PathVariable Integer userId, @PathVariable Integer gameId, @RequestBody Diary diary) {
+
+        if (diary == null || diary.getGame() == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
+        var user = userRepository.findUserById(userId);
+        var game = gameRepository.findGameById(gameId);
+
+        if (game == null || user == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+
+        diary.setUser(user);
+        diary.setGame(game);
+        diary.setPublicationTime(OffsetDateTime.now());
+        diaryRepository.save(diary);
+
+        var diaryDTO = diaryService.entityToDiaryDTO(diary);
+
+        return new ResponseEntity<>(diaryDTO, HttpStatus.OK);
+    }
+
+    @Transactional
+    @DeleteMapping("{userId}/remove-diary/{diaryId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<String> deleteDiary(@PathVariable Integer userId, @PathVariable Integer diaryId) {
+
+        var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
+        if (diary == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+
+        diaryRepository.delete(diary);
+
+        return new ResponseEntity<>("Дневник " + diary.getTitle() + " удален из ваших дневников", HttpStatus.OK);
+    }
+
+    @Transactional
+    @PutMapping({"{userId}/update-diary/{diaryId}"})
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<DiaryDataDTO> updateDiary(@PathVariable Integer diaryId, @PathVariable Integer userId, @RequestBody Diary diaryRequest) {
+
+        if (diaryRequest.getId() == null) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
+        var diary = diaryRepository.findDiary_ByUserIdAndId(userId, diaryId);
+        if (diary == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+
+        if (diaryRequest.getTitle() != null && !Objects.equals(diary.getTitle(), diaryRequest.getTitle())) {
+            diary.setTitle(diaryRequest.getTitle());
+        }
+        if (diaryRequest.getText() != null && !Objects.equals(diary.getText(), diaryRequest.getText())) {
+            diary.setText(diaryRequest.getText());
+        }
+
+        diaryRepository.save(diary);
+
+        var diaryDTO = diaryService.entityToDiaryDTO(diary);
+
+        return new ResponseEntity<>(diaryDTO, HttpStatus.OK);
+    }*/
 
 
     //todo: add updated time to comment;

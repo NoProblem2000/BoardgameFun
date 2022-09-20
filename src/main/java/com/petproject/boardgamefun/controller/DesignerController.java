@@ -1,6 +1,7 @@
 package com.petproject.boardgamefun.controller;
 
 import com.petproject.boardgamefun.dto.DesignerDTO;
+import com.petproject.boardgamefun.dto.GameDataDTO;
 import com.petproject.boardgamefun.dto.request.DesignerRequest;
 import com.petproject.boardgamefun.model.Designer;
 import com.petproject.boardgamefun.repository.DesignerRepository;
@@ -74,14 +75,27 @@ public class DesignerController {
     public ResponseEntity<List<DesignerDTO>> deleteDesigner(@PathVariable Integer id){
 
         var designer = designerRepository.findDesignerById(id);
-
         designerRepository.delete(designer);
-
         var designers = designerService.entitiesToDesignerDTO(designerRepository.findAll());
-
         return new ResponseEntity<>(designers, HttpStatus.OK);
     }
 
+
+    @PostMapping("/{gameId}/set-designer/{designerId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<GameDataDTO> addDesignerToGame(@PathVariable Integer gameId, @PathVariable Integer designerId) {
+
+        var gameDTO = designerService.addDesignerToGame(gameId, designerId);
+        return new ResponseEntity<>(gameDTO, HttpStatus.OK);
+    }
+
+    @DeleteMapping("{gameId}/remove-designer/{gameByDesignerId}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<GameDataDTO> deleteDesignerFromGame(@PathVariable Integer gameId, @PathVariable Integer gameByDesignerId) {
+
+        var gameDTO = designerService.deleteDesignerFromGame(gameId, gameByDesignerId);
+        return new ResponseEntity<>(gameDTO, HttpStatus.OK);
+    }
 
 
 }

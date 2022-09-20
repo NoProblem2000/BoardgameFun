@@ -81,6 +81,9 @@ public class GameSellService {
 
     @Transactional
     public List<GameSellDTO> getGameSellList(Integer userId) {
+        if (userId < 0){
+            throw new NoRecordFoundException("User with id " + userId + " not found");
+        }
         return projectionsToGameSellDTO(gameRepository.getGameSellList(userId));
     }
 

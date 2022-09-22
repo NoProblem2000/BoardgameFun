@@ -64,8 +64,7 @@ public class GameController {
             (value = "Add games", notes = "Return created game")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Game successfully created"),
-            @ApiResponse(code = 400, message = "Game model has bad fields values"),
-            @ApiResponse(code = 400, message = "Game already exist"),
+            @ApiResponse(code = 400, message = "Game model has bad fields values or Game already exist"),
             @ApiResponse(code = 401, message = "You are not authorized"),
             @ApiResponse(code = 403, message = "You does not have such permissions")
     })
@@ -94,8 +93,7 @@ public class GameController {
             (value = "Update the game data", notes = "Return updated game")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Game successfully updated"),
-            @ApiResponse(code = 400, message = "Game model has bad fields values"),
-            @ApiResponse(code = 400, message = "Game already exist"),
+            @ApiResponse(code = 400, message = "Game model has bad fields values or Game already exist"),
             @ApiResponse(code = 401, message = "You are not authorized"),
             @ApiResponse(code = 403, message = "You does not have such permissions")
     })

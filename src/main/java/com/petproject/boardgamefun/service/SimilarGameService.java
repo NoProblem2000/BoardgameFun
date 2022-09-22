@@ -33,6 +33,7 @@ public class SimilarGameService {
 
     @Transactional
     public List<GameDataDTO> addSimilarGame(Integer referenceGameId, Integer sourceGameId) {
+        //todo: check on existence similar game
         var referenceGame = gameRepository.findGameById(referenceGameId);
         var sourceGame = gameRepository.findGameById(sourceGameId);
 

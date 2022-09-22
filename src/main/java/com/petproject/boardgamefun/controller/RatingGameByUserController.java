@@ -40,8 +40,7 @@ public class RatingGameByUserController {
             (value = "Set game rating by user", notes = "Return game rating by user")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Rating successfully set"),
-            @ApiResponse(code = 400, message = "Incorrect rating value"),
-            @ApiResponse(code = 400, message = "Rating already exists"),
+            @ApiResponse(code = 400, message = "Incorrect rating value or Rating already exists"),
             @ApiResponse(code = 401, message = "You are not authorized to set rating"),
             @ApiResponse(code = 404, message = "User or game does not exist")
     })

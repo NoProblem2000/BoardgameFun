@@ -25,8 +25,7 @@ public class UserOwnGameController {
             @ApiResponse(code = 200, message = "Game successfully added to user collection"),
             @ApiResponse(code = 400, message = "Game already exist in user collection"),
             @ApiResponse(code = 401, message = "You are not authorized to add game to collection"),
-            @ApiResponse(code = 404, message = "User with this id does not exist"),
-            @ApiResponse(code = 404, message = "Game with this id does not exist")
+            @ApiResponse(code = 404, message = "User with this id does not exist or Game with this id does not exist")
     })
     @PostMapping("{userId}/{gameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")

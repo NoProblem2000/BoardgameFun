@@ -78,8 +78,7 @@ public class UserController {
             (value = "User registration", notes = "Return sign-up user")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully sign-up"),
-            @ApiResponse(code = 400, message = "User with this nickname already exist"),
-            @ApiResponse(code = 400, message = "User with this email already exist"),
+            @ApiResponse(code = 400, message = "User with this nickname already exist or User with this email already exist")
     })
     @PostMapping("/sign-up")
     public ResponseEntity<?> registerUser(@RequestBody User user) {

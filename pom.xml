@@ -27,7 +27,6 @@
     <!--TODO: add https-->
     <!--TODO: add cache-->
     <!--TODO: add ftp for files-->
-    <!--TODO: add swagger-->
     <!--TODO: add Spring integration???-->
     <!--TODO: add Spring webflux???-->
     <!--TODO: add Eureka for market???-->
@@ -143,6 +142,11 @@
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-maven-plugin</artifactId>
             <version>3.6.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-boot-starter</artifactId>
+            <version>3.0.0</version>
         </dependency>
     </dependencies>
 

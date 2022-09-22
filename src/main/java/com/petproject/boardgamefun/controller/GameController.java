@@ -4,6 +4,9 @@ import com.petproject.boardgamefun.dto.FilterGamesDTO;
 import com.petproject.boardgamefun.dto.GameDataDTO;
 import com.petproject.boardgamefun.model.Game;
 import com.petproject.boardgamefun.service.GameService;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,27 +24,50 @@ public class GameController {
     final GameService gameService;
 
     public GameController(GameService gameService) {
-       this.gameService = gameService;
+        this.gameService = gameService;
     }
 
+    @ApiOperation
+            (value = "Get games", notes = "Return all games")
+    @ApiResponse(code = 200, message = "Games successfully retrieved")
     @GetMapping()
     ResponseEntity<List<GameDataDTO>> getGames() {
         var games = gameService.getGames();
         return new ResponseEntity<>(games, HttpStatus.OK);
     }
 
+    @ApiOperation
+            (value = "Get game by id", notes = "Return game by id")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Game with this id successfully retrieved"),
+            @ApiResponse(code = 404, message = "Game with this id not found"),
+    })
     @GetMapping("/{id}")
     public ResponseEntity<GameDataDTO> getGameById(@PathVariable Integer id) {
         var gameDataDTO = gameService.getGameById(id);
         return new ResponseEntity<>(gameDataDTO, HttpStatus.OK);
     }
 
+    @ApiOperation
+            (value = "Get game by title", notes = "Return games by title matches")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Games with matches title successfully retrieved"),
+            @ApiResponse(code = 404, message = "Games with this title not matches"),
+    })
     @GetMapping("/get-games-by-filter/{title}")
     public ResponseEntity<List<FilterGamesDTO>> getGamesByTitle(@PathVariable String title) {
         var games = gameService.getGameByTitle(title);
         return new ResponseEntity<>(games, HttpStatus.OK);
     }
 
+    @ApiOperation
+            (value = "Add games", notes = "Return created game")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Game successfully created"),
+            @ApiResponse(code = 400, message = "Game model has bad fields values or Game already exist"),
+            @ApiResponse(code = 401, message = "You are not authorized"),
+            @ApiResponse(code = 403, message = "You does not have such permissions")
+    })
     @PostMapping("/")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<GameDataDTO> addGame(@RequestBody Game newGame) {
@@ -49,6 +75,13 @@ public class GameController {
         return getGameDataDTOResponseEntity(newGame);
     }
 
+    @ApiOperation
+            (value = "Upload game image", notes = "Return updated game")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Image successfully uploaded"),
+            @ApiResponse(code = 404, message = "Game with this id does not exist"),
+            @ApiResponse(code = 401, message = "You are not authorized")
+    })
     @PostMapping("/upload-image/{gameId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<GameDataDTO> uploadImage(@PathVariable Integer gameId, @RequestParam("picture") MultipartFile file) throws IOException {
@@ -56,6 +89,14 @@ public class GameController {
         return new ResponseEntity<>(gameDTO, HttpStatus.OK);
     }
 
+    @ApiOperation
+            (value = "Update the game data", notes = "Return updated game")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Game successfully updated"),
+            @ApiResponse(code = 400, message = "Game model has bad fields values or Game already exist"),
+            @ApiResponse(code = 401, message = "You are not authorized"),
+            @ApiResponse(code = 403, message = "You does not have such permissions")
+    })
     @PutMapping("/")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<GameDataDTO> updateGame(@RequestBody Game updatedGame) {
@@ -68,12 +109,26 @@ public class GameController {
         return new ResponseEntity<>(game, HttpStatus.OK);
     }
 
+    @ApiOperation
+            (value = "Delete the game", notes = "Return status of deleted game")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Game successfully deleted"),
+            @ApiResponse(code = 404, message = "Game doesn't exist"),
+            @ApiResponse(code = 401, message = "You are not authorized"),
+            @ApiResponse(code = 403, message = "You does not have such permissions")
+    })
     @DeleteMapping("/")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> removeGameFromSite(@RequestBody Game deleteGame) {
         gameService.delete(deleteGame);
         return new ResponseEntity<>(deleteGame.getTitle() + " удалена из базы данных", HttpStatus.OK);
     }
+
+    @ApiOperation
+            (value = "Delete the game", notes = "Return status of deleted game")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Games by user successfully retrieved")
+    })
     @GetMapping("/{userId}/games")
     public ResponseEntity<List<GameDataDTO>> getUserCollection(@PathVariable Integer userId) {
 

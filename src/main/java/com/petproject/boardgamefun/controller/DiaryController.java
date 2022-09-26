@@ -65,7 +65,7 @@ public class DiaryController {
             @ApiResponse(code = 401, message = "You are not authorized"),
             @ApiResponse(code = 404, message = "Diary not found")
     })
-    @DeleteMapping("{userId/{diaryId}")
+    @DeleteMapping("{userId}/{diaryId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<String> deleteDiary(@PathVariable Integer userId, @PathVariable Integer diaryId) {
         String title = diaryService.deleteDiary(userId, diaryId);

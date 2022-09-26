@@ -2,6 +2,7 @@ package com.petproject.boardgamefun.service;
 
 import com.petproject.boardgamefun.dto.ForumDataDTO;
 import com.petproject.boardgamefun.dto.request.ForumRatingRequest;
+import com.petproject.boardgamefun.exception.NoRecordFoundException;
 import com.petproject.boardgamefun.model.ForumRating;
 import com.petproject.boardgamefun.repository.ForumRatingRepository;
 import com.petproject.boardgamefun.repository.ForumRepository;
@@ -31,6 +32,10 @@ public class ForumRatingService {
         if (forumRating == null) {
             var forum = forumRepository.findForumById(forumId);
             var user = userRepository.findUserById(userId);
+
+            if (forum == null || user == null) {
+                throw new NoRecordFoundException("Forum or User does not exist");
+            }
 
             forumRating = new ForumRating();
             forumRating.setForum(forum);

@@ -79,6 +79,8 @@ public class DesignerService {
     @Transactional
     public List<DesignerDTO> updateDesigner(Integer id, DesignerRequest designerRequest){
         var designer = designerRepository.findDesignerById(id);
+        if (designer == null)
+            throw new NoRecordFoundException("Designer " + id + " not found");
 
         designer.setName(designerRequest.getName());
         designerRepository.save(designer);
@@ -89,6 +91,8 @@ public class DesignerService {
     @Transactional
     public List<DesignerDTO> deleteDesigner(Integer id){
         var designer = designerRepository.findDesignerById(id);
+        if (designer == null)
+            throw new NoRecordFoundException("Designer " + id + " not found");
         designerRepository.delete(designer);
         return entitiesToDesignerDTO(designerRepository.findAll());
     }

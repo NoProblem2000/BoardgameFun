@@ -49,6 +49,10 @@ public class ForumMessageService {
         var forum = forumRepository.findForumById(forumId);
         var user = userRepository.findUserById(userId);
 
+        if(forum == null || user == null){
+            throw new NoRecordFoundException("User or Forum not found");
+        }
+
         var forumMessage = new ForumMessage();
         forumMessage.setForum(forum);
         forumMessage.setUser(user);
@@ -78,6 +82,9 @@ public class ForumMessageService {
     @Transactional
     public List<ForumMessageDTO> deleteMessage(Integer forumId, Integer messageId) {
         var message = forumMessageRepository.findForumMessageById(messageId);
+        if (message == null) {
+            throw new NoRecordFoundException("Message not found");
+        }
         forumMessageRepository.delete(message);
         return entitiesToForumMessagesDTO(forumMessageRepository.findByForumId(forumId));
     }

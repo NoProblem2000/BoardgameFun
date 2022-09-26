@@ -3,96 +3,68 @@ package com.petproject.boardgamefun.controller;
 import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.GameDataDTO;
 import com.petproject.boardgamefun.dto.request.DesignerRequest;
-import com.petproject.boardgamefun.model.Designer;
-import com.petproject.boardgamefun.repository.DesignerRepository;
 import com.petproject.boardgamefun.service.DesignerService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import javax.transaction.Transactional;
 import java.util.List;
 
 @RestController
 @RequestMapping("/designer")
 public class DesignerController {
 
-    private final DesignerRepository designerRepository;
     private final DesignerService designerService;
 
-    public DesignerController(DesignerRepository designerRepository, DesignerService designerService) {
-        this.designerRepository = designerRepository;
+    public DesignerController(DesignerService designerService) {
         this.designerService = designerService;
     }
 
-    @Transactional
     @GetMapping("")
-    public ResponseEntity<List<DesignerDTO>> getDesigners(){
-        var designers =  designerService.entitiesToDesignerDTO(designerRepository.findAll());
-
+    public ResponseEntity<List<DesignerDTO>> getDesigners() {
+        var designers = designerService.getDesigners();
         return new ResponseEntity<>(designers, HttpStatus.OK);
     }
 
-    @Transactional
     @GetMapping("/{name}")
-    public ResponseEntity<DesignerDTO> getDesignerByName(@PathVariable String name){
-        var designer = designerService.entityToDesignerDTO(designerRepository.findDesignerByName(name));
-
+    public ResponseEntity<DesignerDTO> getDesignerByName(@PathVariable String name) {
+        var designer = designerService.getDesignerByName(name);
         return new ResponseEntity<>(designer, HttpStatus.OK);
     }
 
-    @Transactional
-    @PostMapping("/add")
+    @PostMapping("")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<List<DesignerDTO>> addDesigner(@RequestBody DesignerRequest designerRequest){
-        var designer = new Designer();
-        designer.setName(designerRequest.getName());
-        designerRepository.save(designer);
-
-        var designers = designerService.entitiesToDesignerDTO(designerRepository.findAll());
-
+    public ResponseEntity<List<DesignerDTO>> addDesigner(@RequestBody DesignerRequest designerRequest) {
+        var designers = designerService.addDesigner(designerRequest);
         return new ResponseEntity<>(designers, HttpStatus.OK);
     }
 
-    @Transactional
-    @PatchMapping("/update/{id}")
+    @PatchMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<List<DesignerDTO>> updateDesigner(@PathVariable Integer id, @RequestBody DesignerRequest designerRequest){
-        var designer = designerRepository.findDesignerById(id);
-
-        designer.setName(designerRequest.getName());
-        designerRepository.save(designer);
-
-        var designers = designerService.entitiesToDesignerDTO(designerRepository.findAll());
-
+    public ResponseEntity<List<DesignerDTO>> updateDesigner(@PathVariable Integer id, @RequestBody DesignerRequest designerRequest) {
+        var designers = designerService.updateDesigner(id, designerRequest);
         return new ResponseEntity<>(designers, HttpStatus.OK);
     }
 
-    @Transactional
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<List<DesignerDTO>> deleteDesigner(@PathVariable Integer id){
-
-        var designer = designerRepository.findDesignerById(id);
-        designerRepository.delete(designer);
-        var designers = designerService.entitiesToDesignerDTO(designerRepository.findAll());
+    public ResponseEntity<List<DesignerDTO>> deleteDesigner(@PathVariable Integer id) {
+        var designers = designerService.deleteDesigner(id);
         return new ResponseEntity<>(designers, HttpStatus.OK);
     }
 
 
-    @PostMapping("/{gameId}/set-designer/{designerId}")
+    @PostMapping("/{gameId}/{designerId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<GameDataDTO> addDesignerToGame(@PathVariable Integer gameId, @PathVariable Integer designerId) {
-
         var gameDTO = designerService.addDesignerToGame(gameId, designerId);
         return new ResponseEntity<>(gameDTO, HttpStatus.OK);
     }
 
-    @DeleteMapping("{gameId}/remove-designer/{gameByDesignerId}")
+    @DeleteMapping("{gameId}/{gameByDesignerId}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<GameDataDTO> deleteDesignerFromGame(@PathVariable Integer gameId, @PathVariable Integer gameByDesignerId) {
-
         var gameDTO = designerService.deleteDesignerFromGame(gameId, gameByDesignerId);
         return new ResponseEntity<>(gameDTO, HttpStatus.OK);
     }

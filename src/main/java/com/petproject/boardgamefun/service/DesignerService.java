@@ -2,6 +2,7 @@ package com.petproject.boardgamefun.service;
 
 import com.petproject.boardgamefun.dto.DesignerDTO;
 import com.petproject.boardgamefun.dto.GameDataDTO;
+import com.petproject.boardgamefun.dto.request.DesignerRequest;
 import com.petproject.boardgamefun.exception.NoRecordFoundException;
 import com.petproject.boardgamefun.model.Designer;
 import com.petproject.boardgamefun.model.GameByDesigner;
@@ -51,6 +52,45 @@ public class DesignerService {
         gameByDesignerRepository.deleteById(gameByDesignerId);
         return gameService.projectionsToGameDTO(gameRepository.findGameWithRating(gameId),
                 designerRepository.findDesignersUsingGame(gameId));
+    }
+
+    @Transactional
+    public List<DesignerDTO> getDesigners(){
+        return entitiesToDesignerDTO(designerRepository.findAll());
+    }
+
+    @Transactional
+    public DesignerDTO getDesignerByName(String name) {
+        var designer = designerRepository.findDesignerByName(name);
+        if (designer == null)
+            throw new NoRecordFoundException("Designer " + name + " not found");
+        return entityToDesignerDTO(designer);
+    }
+
+    @Transactional
+    public List<DesignerDTO> addDesigner(DesignerRequest designerRequest){
+        var designer = new Designer();
+        designer.setName(designerRequest.getName());
+        designerRepository.save(designer);
+
+        return entitiesToDesignerDTO(designerRepository.findAll());
+    }
+
+    @Transactional
+    public List<DesignerDTO> updateDesigner(Integer id, DesignerRequest designerRequest){
+        var designer = designerRepository.findDesignerById(id);
+
+        designer.setName(designerRequest.getName());
+        designerRepository.save(designer);
+
+        return entitiesToDesignerDTO(designerRepository.findAll());
+    }
+
+    @Transactional
+    public List<DesignerDTO> deleteDesigner(Integer id){
+        var designer = designerRepository.findDesignerById(id);
+        designerRepository.delete(designer);
+        return entitiesToDesignerDTO(designerRepository.findAll());
     }
 
     public List<DesignerDTO> entitiesToDesignerDTO(List<Designer> designers) {
